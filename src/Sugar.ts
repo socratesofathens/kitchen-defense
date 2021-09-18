@@ -24,10 +24,12 @@ export default class Sugar extends Actor {
     circle.setStrokeStyle(5, 0x000000)
     this.container.add(circle)
 
-    const style = { fontFamily: 'Arial', color: 'black' }
-    const text = this.scene.add.text(0, 0, 'SUGAR', style)
-    text.setFontSize(75)
-    text.setOrigin(0.5, 0.5)
+    const text = this.scene.createText({
+      position: this.scene.ORIGIN,
+      content: 'SUGAR',
+      color: 'black',
+      fontSize: 0.1
+    })
     this.container.add(text)
 
     const onEat = (
@@ -41,7 +43,12 @@ export default class Sugar extends Actor {
         mob.destroy()
         this.scene.createWorker()
       } else {
-        console.log('game over')
+        this.scene.createText({
+          realPosition: this.scene.REAL_CENTER,
+          content: 'GAME OVER',
+          color: 'red',
+          fontSize: 0.25
+        })
       }
     }
 

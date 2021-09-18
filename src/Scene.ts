@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
 
-import { HEIGHT, RATIO } from './config'
+import { HALF_RATIO, HEIGHT, RATIO } from './config'
 import Mob from './Mob'
 import Sugar from './Sugar'
 import Tower from './Tower'
@@ -9,9 +9,11 @@ import { Position, Size } from './types'
 import worker from './worker.png'
 
 export default class Scene extends Phaser.Scene {
+  public CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public graphics!: Phaser.GameObjects.Graphics
   public mobs!: Phaser.Physics.Arcade.Group
   public ORIGIN: Position = { x: 0, y: 0 }
+  public REAL_CENTER!: Position
   public statics!: Phaser.Physics.Arcade.StaticGroup
   public sugar!: Sugar
 
@@ -29,6 +31,7 @@ export default class Scene extends Phaser.Scene {
 
   create (): void {
     this.graphics = this.add.graphics()
+    this.REAL_CENTER = this.getRealPosition(this.CENTER)
 
     this.mobs = this.physics.add.group()
     const position = { x: 0.8, y: 0.1 }
@@ -174,6 +177,24 @@ export default class Scene extends Phaser.Scene {
     }
 
     return rectangle
+  }
+
+  createText ({ position, realPosition, content, color, fontSize }: {
+    position?: Position
+    realPosition?: Position
+    content: string
+    color: string
+    fontSize: number
+  }): Phaser.GameObjects.Text {
+    realPosition = this.checkRealPosition({ position, realPosition })
+    const realFontSize = this.getReal(fontSize)
+
+    const style = { fontFamily: 'Arial', color }
+    const text = this.add.text(realPosition.x, realPosition.y, content, style)
+    text.setFontSize(realFontSize)
+    text.setOrigin(0.5, 0.5)
+
+    return text
   }
 
   createTower ({ position, realPosition }: {
