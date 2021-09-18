@@ -39,17 +39,18 @@ export default class Sugar extends Actor {
       const newScale = this.container.scale - 0.01
       if (newScale > 0) {
         this.container.setScale(newScale)
-
-        mob.destroy()
-        this.scene.createWorker()
       } else {
+        this.scene.over = true
         this.scene.createText({
-          realPosition: this.scene.REAL_CENTER,
+          position: this.scene.CENTER,
           content: 'GAME OVER',
           color: 'red',
           fontSize: 0.25
         })
       }
+
+      mob.destroy()
+      this.scene.createWorker()
     }
 
     this.scene.physics.add.collider(

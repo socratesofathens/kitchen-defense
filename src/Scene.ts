@@ -16,6 +16,7 @@ export default class Scene extends Phaser.Scene {
   public REAL_CENTER!: Position
   public statics!: Phaser.Physics.Arcade.StaticGroup
   public sugar!: Sugar
+  public over = false
 
   public readonly actors: Actor[] = []
 
@@ -34,22 +35,24 @@ export default class Scene extends Phaser.Scene {
     this.REAL_CENTER = this.getRealPosition(this.CENTER)
 
     this.mobs = this.physics.add.group()
-    const position = { x: 0.8, y: 0.1 }
+    const position = { x: 0.1, y: 0.1 }
     this.queen = new Mob({ scene: this, position, radius: 0.05 })
-    // this.createWorker()
+    this.createWorker()
 
     this.physics.add.collider(this.mobs, this.mobs)
 
     this.statics = this.physics.add.staticGroup()
 
-    // this.setupTowers()
+    this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
       (pointer: Phaser.Input.Pointer) => {
-        const realPosition = { x: pointer.worldX, y: pointer.worldY }
+        if (!this.over) {
+          const realPosition = { x: pointer.worldX, y: pointer.worldY }
 
-        this.createTower({ realPosition })
+          this.createTower({ realPosition })
+        }
       }
     )
 
@@ -269,9 +272,15 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const position = { x: 0.5, y: 0.5 }
+    const right = RATIO - 0.5
 
-    this.createTower({ position })
+    const topLeft = { x: 0.5, y: 0.1 }
+    const topRight = { x: right, y: 0.1 }
+    const bottomLeft = { x: 0.5, y: 0.9 }
+    const bottomRight = { x: right, y: 0.9 }
+    const positions = [topLeft, topRight, bottomLeft, bottomRight]
+
+    positions.forEach(position => this.createTower({ position }))
   }
 
   strokeLine ({ a, b, realA, realB }: {
