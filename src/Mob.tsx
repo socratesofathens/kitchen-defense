@@ -1,23 +1,19 @@
 import Scene from './Scene'
+import { Position } from './types'
 
 export default class Mob {
   readonly scene: Scene
   readonly shape: Phaser.GameObjects.Arc
-  readonly x: number
-  readonly y: number
 
-  constructor ({ scene, x, y, radius, color }: {
+  constructor ({ scene, position, radius, color }: {
     scene: Scene
-    x: number
-    y: number
+    position: Position
     radius: number
     color: number
   }) {
     this.scene = scene
-    this.x = x
-    this.y = y
 
-    this.shape = this.scene.createCircle({ x, y, radius, color })
+    this.shape = this.scene.createCircle({ position, radius, color })
     this.shape.setStrokeStyle(2, 0x000000)
     this.scene.mobs.add(this.shape)
 
@@ -29,17 +25,17 @@ export default class Mob {
     }
   }
 
-  moveTo ({ x, y, speed }: {
-    x: number
-    y: number
+  moveTo ({ position, speed }: {
+    position: Position
     speed: number
   }): void {
     if (this.shape.body != null) {
-      const realX = this.scene.getReal(x)
-      const realY = this.scene.getReal(y)
+      const realPosition = this.scene.getRealPosition(position)
       const realSpeed = this.scene.getReal(speed)
 
-      this.scene.physics.moveTo(this.shape, realX, realY, realSpeed)
+      this.scene.physics.moveTo(
+        this.shape, realPosition.x, realPosition.y, realSpeed
+      )
     }
   }
 

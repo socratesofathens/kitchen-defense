@@ -17,12 +17,10 @@ export default class Tower {
 
   readonly SIZE = 0.01
 
-  constructor ({ scene, x, y, realX, realY }: {
+  constructor ({ scene, position, realPosition }: {
     scene: Scene
-    x?: number
-    y?: number
-    realX?: number
-    realY?: number
+    position?: Position
+    realPosition?: Position
   }) {
     this.scene = scene
 
@@ -32,7 +30,7 @@ export default class Tower {
     this.REAL_SIZE = this.scene.getReal(this.SIZE)
     const doubleSize = this.REAL_SIZE * 2
 
-    this.container = this.scene.createContainer({ x, y, realX, realY })
+    this.container = this.scene.createContainer({ position, realPosition })
     this.container.setSize(doubleSize, doubleSize)
 
     this.scene.statics.add(this.container)
@@ -41,17 +39,21 @@ export default class Tower {
       this.container.body.setCircle(this.REAL_SIZE)
     }
 
+    const center = { x: 0, y: 0 }
     const base = this.scene.createCircle({
-      x: 0, y: 0, radius: this.SIZE, color: 0xff0000
+      position: center, radius: this.SIZE, color: 0xff0000
     })
     this.container.add(base)
 
-    const barrel = this.scene.createRectangle({
-      x: 0.012, y: 0, width: 0.024, height: 0.003, color: 0xFF0000
+    const origin = { x: 0, y: 0.5 }
+    const size = { width: 0.024, height: 0.003 }
+    const cannon = this.scene.createRectangle({
+      position: center, size, color: 0xFF0000, origin
     })
-    this.container.add(barrel)
+    this.container.add(cannon)
 
-    this.muzzle = this.scene.createCircle({ x: 0.024, y: 0 })
+    const tip = { x: 0.024, y: 0 }
+    this.muzzle = this.scene.createCircle({ position: tip })
     this.container.add(this.muzzle)
 
     this.tempMatrix = new Phaser.GameObjects.Components.TransformMatrix()
@@ -95,6 +97,7 @@ export default class Tower {
     target: Phaser.GameObjects.Arc
     position: Position
   }): void {
+    // TODO Let lasers kill multiple units
     this.fireTime = now
     this.fireTarget = position
 

@@ -1,6 +1,6 @@
 import Mob from './Mob'
 import Tower from './Tower'
-import { Position } from './types'
+import { Position, Size } from './types'
 import Phaser from 'phaser'
 import { HEIGHT, RATIO } from './config'
 
@@ -17,15 +17,10 @@ export default class Scene extends Phaser.Scene {
   private fireMuzzle!: Position
   private readonly gun!: Phaser.GameObjects.Rectangle
   private queen!: Mob
-  private range!: number
-  private realRange!: number
-  private REAL_SIZE!: number
   private readonly muzzle!: Phaser.GameObjects.Arc
-  private tower!: Tower
+  private readonly tower!: Tower
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
-
-  readonly SIZE = 0.01
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -33,32 +28,31 @@ export default class Scene extends Phaser.Scene {
 
   create (): void {
     this.graphics = this.add.graphics()
-    this.range = 0.5
-    this.realRange = this.getReal(this.range)
 
     this.mobs = this.physics.add.group()
+    const position = { x: 0.150, y: 0.4 }
     this.queen = new Mob({
-      scene: this, x: 0.150, y: 0.4, radius: 0.05, color: 0x000000
+      scene: this, position, radius: 0.05, color: 0x000000
     })
     const worker = this.createWorker()
-    worker.setVelocity({ x: -0.175, y: 0.1 })
+    const velocity = { x: -0.175, y: 0.1 }
+    worker.setVelocity(velocity)
 
     this.physics.add.collider(this.mobs, this.mobs)
-
-    this.REAL_SIZE = this.getReal(this.SIZE)
 
     this.statics = this.physics.add.staticGroup()
     this.physics.add.collider(this.statics, this.mobs)
 
-    this.tower = new Tower({ scene: this, x: 0.5, y: 0.5 })
+    this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
       (pointer: Phaser.Input.Pointer) => {
-        const { worldX, worldY } = pointer
+        const realPosition = { x: pointer.worldX, y: pointer.worldY }
 
-        new Tower({ scene: this, realX: worldX, realY: worldY })
-      })
+        this.createTower({ realPosition })
+      }
+    )
 
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off(Phaser.Input.Events.POINTER_UP)
@@ -90,43 +84,39 @@ export default class Scene extends Phaser.Scene {
     return this.checkReal({ value, real, getter: this.getReal })
   }
 
-  checkRealPosition ({ value, real }: {
-    value?: Position
-    real?: Position
+  checkRealPosition ({ position, realPosition }: {
+    position?: Position
+    realPosition?: Position
   }): Position {
-    return this.checkReal({ value, real, getter: this.getRealPosition })
+    return this.checkReal({
+      value: position, real: realPosition, getter: this.getRealPosition
+    })
   }
 
-  createContainer ({ x, y, realX, realY }: {
-    x?: number
-    y?: number
-    realX?: number
-    realY?: number
+  createContainer ({ position, realPosition }: {
+    position?: Position
+    realPosition?: Position
   }): Phaser.GameObjects.Container {
-    realX = this.checkRealNumber({ value: x, real: realX })
-    realY = this.checkRealNumber({ value: y, real: realY })
+    realPosition = this.checkRealPosition({ position, realPosition })
 
-    const container = this.add.container(realX, realY)
+    const container = this.add.container(realPosition.x, realPosition.y)
 
     return container
   }
 
-  createCircle ({ x, y, radius, color, realX, realY }: {
-    x: number
-    y: number
-    realX?: number
-    realY?: number
+  createCircle ({ position, realPosition, radius, color }: {
+    position?: Position
+    realPosition?: Position
     radius?: number
     color?: number
   }): Phaser.GameObjects.Arc {
-    realX = this.checkRealNumber({ value: x, real: realX })
-    realY = this.checkRealNumber({ value: y, real: realY })
+    realPosition = this.checkRealPosition({ position, realPosition })
 
     if (radius != null) {
       radius = this.getReal(radius)
     }
 
-    const circle = this.add.circle(realX, realY, radius, color)
+    const circle = this.add.circle(realPosition.x, realPosition.y, radius, color)
 
     return circle
   }
@@ -137,8 +127,8 @@ export default class Scene extends Phaser.Scene {
     realA?: Position
     realB?: Position
   } = { realA: this.ORIGIN, realB: this.ORIGIN }): Phaser.Geom.Line {
-    realA = this.checkRealPosition({ value: a, real: realA })
-    realB = this.checkRealPosition({ value: b, real: realB })
+    realA = this.checkRealPosition({ position: a, realPosition: realA })
+    realB = this.checkRealPosition({ position: b, realPosition: realB })
 
     const line = new Phaser.Geom.Line(realA.x, realA.y, realB.x, realB.y)
 
@@ -166,34 +156,44 @@ export default class Scene extends Phaser.Scene {
     return values
   }
 
-  createRectangle ({ x, y, width, height, color, realX, realY }: {
-    x: number
-    y: number
-    width: number
-    height: number
+  createRectangle ({ position, realPosition, size, color, origin }: {
+    position?: Position
+    realPosition?: Position
+    size: Size
     color: number
-    realX?: number
-    realY?: number
+    origin?: Position
   }): Phaser.GameObjects.Rectangle {
-    realX = this.checkRealNumber({ value: x, real: realX })
-    realY = this.checkRealNumber({ value: y, real: realY })
+    realPosition = this.checkRealPosition({ position, realPosition })
 
-    const realWidth = this.getReal(width)
-    const realHeight = this.getReal(height)
+    const realSize = this.getRealSize(size)
 
     const rectangle = this.add.rectangle(
-      realX, realY, realWidth, realHeight, color
+      realPosition.x, realPosition.y, realSize.width, realSize.height, color
     )
 
+    if (origin != null) {
+      rectangle.setOrigin(origin.x, origin.y)
+    }
+
     return rectangle
+  }
+
+  createTower ({ position, realPosition }: {
+    position?: Position
+    realPosition?: Position
+  }): Tower {
+    const tower = new Tower({ scene: this, position, realPosition })
+
+    return tower
   }
 
   createWorker (): Mob {
     const x = Math.random()
     const y = Math.random()
 
+    const position = { x, y }
     const worker = new Mob({
-      scene: this, x, y, radius: 0.01, color: 0x000000
+      scene: this, position, radius: 0.01, color: 0x000000
     })
 
     const dX = Math.random()
@@ -207,19 +207,16 @@ export default class Scene extends Phaser.Scene {
     return worker
   }
 
-  fillCircle ({ x, y, radius, realX, realY, realRadius }: {
-    x?: number
-    y?: number
+  fillCircle ({ position, radius, realPosition, realRadius }: {
+    position?: Position
+    realPosition?: Position
     radius?: number
-    realX?: number
-    realY?: number
     realRadius?: number
   }): void {
-    realX = this.checkRealNumber({ value: x, real: realX })
-    realY = this.checkRealNumber({ value: y, real: realY })
+    realPosition = this.checkRealPosition({ position, realPosition })
     realRadius = this.checkRealNumber({ value: radius, real: realRadius })
 
-    this.graphics.fillCircle(realX, realY, realRadius)
+    this.graphics.fillCircle(realPosition.x, realPosition.y, realRadius)
   }
 
   fire ({ now, target, position }: {
@@ -277,6 +274,23 @@ export default class Scene extends Phaser.Scene {
     return position
   }
 
+  getRealSize = ({ width, height }: {
+    width: number
+    height: number
+  }): Size => {
+    const realWidth = this.getReal(width)
+    const realHeight = this.getReal(height)
+    const size = { width: realWidth, height: realHeight }
+
+    return size
+  }
+
+  setupTowers (): void {
+    const position = { x: 0.5, y: 0.5 }
+
+    this.createTower({ position })
+  }
+
   strokeLine ({ a, b, realA, realB }: {
     a?: Position
     b?: Position
@@ -311,7 +325,8 @@ export default class Scene extends Phaser.Scene {
     const horizontal = this.createRange(0.2)
     horizontal.forEach(y => this.strokeHorizontal(y))
 
-    this.queen.moveTo({ x: 0.5, y: 0.5, speed: 0.01 })
+    const position = { x: 0.5, y: 0.5 }
+    this.queen.moveTo({ position, speed: 0.01 })
 
     this.towers.forEach(tower => {
       tower.update()
