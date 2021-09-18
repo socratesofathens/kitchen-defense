@@ -1,11 +1,15 @@
+export type AnyBody = Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody
+
+export type AnyGroup = Phaser.Physics.Arcade.Group | Phaser.Physics.Arcade.StaticGroup
+
 export interface Position {
   x: number
   y: number
 }
 
-export interface Result <T> {
+export interface Result <T, U = Phaser.GameObjects.Container> {
   value: T
-  element?: Phaser.GameObjects.Arc
+  element?: U
 }
 
 export interface Size {

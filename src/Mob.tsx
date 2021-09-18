@@ -1,27 +1,31 @@
+import Actor from './Actor'
 import Scene from './Scene'
 import { Position } from './types'
 
-export default class Mob {
-  readonly scene: Scene
-  readonly shape: Phaser.GameObjects.Arc
-
-  constructor ({ scene, position, radius, color }: {
+export default class Mob extends Actor {
+  constructor ({ scene, position, radius, color = 0xFFFFFF }: {
     scene: Scene
     position: Position
     radius: number
-    color: number
+    color?: number
   }) {
-    this.scene = scene
+    super({
+      scene, position, radius, groups: [scene.mobs]
+    })
 
-    this.shape = this.scene.createCircle({ position, radius, color })
-    this.shape.setStrokeStyle(2, 0x000000)
-    this.scene.mobs.add(this.shape)
+    const shape = this.scene.createCircle({
+      position: this.scene.ORIGIN, radius, color
+    })
+    shape.setStrokeStyle(2, 0x000000)
+    this.container.add(shape)
 
-    if (this.shape.body instanceof Phaser.Physics.Arcade.Body) {
-      const realRadius = this.scene.getReal(radius)
-      this.shape.body.setBounce(1, 1)
-      this.shape.body.setCircle(realRadius)
-      this.shape.body.collideWorldBounds = true
+    const sprite = this.scene.add.sprite(0, 0, 'worker')
+    sprite.setDisplaySize(this.realRadius * 1.4, this.realRadius * 1.4)
+    this.container.add(sprite)
+
+    if (this.container.body instanceof Phaser.Physics.Arcade.Body) {
+      this.container.body.setBounce(1, 1)
+      this.container.body.collideWorldBounds = true
     }
   }
 
@@ -29,12 +33,12 @@ export default class Mob {
     position: Position
     speed: number
   }): void {
-    if (this.shape.body != null) {
+    if (this.container.body != null) {
       const realPosition = this.scene.getRealPosition(position)
       const realSpeed = this.scene.getReal(speed)
 
       this.scene.physics.moveTo(
-        this.shape, realPosition.x, realPosition.y, realSpeed
+        this.container, realPosition.x, realPosition.y, realSpeed
       )
     }
   }
@@ -46,7 +50,7 @@ export default class Mob {
     const realX = this.scene.getReal(x)
     const realY = this.scene.getReal(y)
 
-    this.shape.body.velocity.x = realX
-    this.shape.body.velocity.y = realY
+    this.container.body.velocity.x = realX
+    this.container.body.velocity.y = realY
   }
 }

@@ -1,8 +1,10 @@
+import Phaser from 'phaser'
+
+import { HEIGHT, RATIO } from './config'
 import Mob from './Mob'
 import Tower from './Tower'
 import { Position, Size } from './types'
-import Phaser from 'phaser'
-import { HEIGHT, RATIO } from './config'
+import worker from './worker.png'
 
 export default class Scene extends Phaser.Scene {
   public graphics!: Phaser.GameObjects.Graphics
@@ -26,14 +28,16 @@ export default class Scene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#FFFFFF')
   }
 
+  preload (): void {
+    this.load.image('worker', worker)
+  }
+
   create (): void {
     this.graphics = this.add.graphics()
 
     this.mobs = this.physics.add.group()
     const position = { x: 0.150, y: 0.4 }
-    this.queen = new Mob({
-      scene: this, position, radius: 0.05, color: 0x000000
-    })
+    this.queen = new Mob({ scene: this, position, radius: 0.05 })
     const worker = this.createWorker()
     const velocity = { x: -0.175, y: 0.1 }
     worker.setVelocity(velocity)
@@ -192,9 +196,7 @@ export default class Scene extends Phaser.Scene {
     const y = Math.random()
 
     const position = { x, y }
-    const worker = new Mob({
-      scene: this, position, radius: 0.01, color: 0x000000
-    })
+    const worker = new Mob({ scene: this, position, radius: 0.01 })
 
     const dX = Math.random()
     const vX = (dX / 3) + 0.1

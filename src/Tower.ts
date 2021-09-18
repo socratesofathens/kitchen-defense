@@ -1,54 +1,39 @@
 import Phaser from 'phaser'
+import Actor from './Actor'
 import Scene from './Scene'
 import { Position, Result } from './types'
 
-export default class Tower {
+export default class Tower extends Actor {
   private fireTime!: number
   private fireTarget!: Position
   private fireMuzzle!: Position
   private readonly range!: number
   private readonly realRange!: number
-  private readonly REAL_SIZE!: number
-  private readonly scene: Scene
   private readonly muzzle!: Phaser.GameObjects.Arc
-  private container!: Phaser.GameObjects.Container
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
-
-  readonly SIZE = 0.01
 
   constructor ({ scene, position, realPosition }: {
     scene: Scene
     position?: Position
     realPosition?: Position
   }) {
-    this.scene = scene
+    super({
+      scene, position, realPosition, radius: 0.01, groups: [scene.statics]
+    })
 
     this.range = 0.5
     this.realRange = this.scene.getReal(this.range)
 
-    this.REAL_SIZE = this.scene.getReal(this.SIZE)
-    const doubleSize = this.REAL_SIZE * 2
-
-    this.container = this.scene.createContainer({ position, realPosition })
-    this.container.setSize(doubleSize, doubleSize)
-
-    this.scene.statics.add(this.container)
-
-    if (this.container.body instanceof Phaser.Physics.Arcade.StaticBody) {
-      this.container.body.setCircle(this.REAL_SIZE)
-    }
-
-    const center = { x: 0, y: 0 }
     const base = this.scene.createCircle({
-      position: center, radius: this.SIZE, color: 0xff0000
+      position: this.scene.ORIGIN, radius: this.radius, color: 0xff0000
     })
     this.container.add(base)
 
     const origin = { x: 0, y: 0.5 }
     const size = { width: 0.024, height: 0.003 }
     const cannon = this.scene.createRectangle({
-      position: center, size, color: 0xFF0000, origin
+      position: this.scene.ORIGIN, size, color: 0xFF0000, origin
     })
     this.container.add(cannon)
 
@@ -65,7 +50,7 @@ export default class Tower {
   attack ({ now, tracer, enemies }: {
     now: number
     tracer: Phaser.Geom.Line
-    enemies: Phaser.GameObjects.Arc[]
+    enemies: Phaser.GameObjects.Container[]
   }): void {
     const target = this.getTarget({ line: tracer, targets: enemies })
 
@@ -94,7 +79,7 @@ export default class Tower {
 
   fire ({ now, target, position }: {
     now: number
-    target: Phaser.GameObjects.Arc
+    target: Phaser.GameObjects.Container
     position: Position
   }): void {
     // TODO Let lasers kill multiple units
@@ -120,8 +105,8 @@ export default class Tower {
   }
 
   getNearest (
-    targets: Phaser.GameObjects.Arc[]
-  ): Phaser.GameObjects.Arc | undefined {
+    targets: Phaser.GameObjects.Container[]
+  ): Phaser.GameObjects.Container | undefined {
     const closest: Result<number> = { value: Infinity }
 
     targets.forEach((target) => {
@@ -155,14 +140,17 @@ export default class Tower {
 
   getTarget ({ line, targets }: {
     line: Phaser.Geom.Line
-    targets: Phaser.GameObjects.Arc[]
-  }): Result<Position> {
-    const target: Result<Position> = { value: { x: 0, y: 0 } }
+    targets: Phaser.GameObjects.Container[]
+  }): Result<Position, Phaser.GameObjects.Container> {
+    const target: Result<Position> = {
+      value: { x: 0, y: 0 }
+    }
 
     let closest = Infinity
-    targets.forEach((mob) => {
+    targets.forEach((container) => {
+      const radius = container.width / 2
       const circle = new Phaser.Geom.Circle(
-        mob.x, mob.y, mob.radius
+        container.x, container.y, radius
       )
 
       const intersection = this.scene.getLineToCircle({ line, circle })
@@ -172,7 +160,7 @@ export default class Tower {
       }
 
       const distance = Phaser.Math.Distance.Between(
-        this.container.x, this.container.y, mob.x, mob.y
+        this.container.x, this.container.y, container.x, container.y
       )
 
       const closer = distance < closest
@@ -180,7 +168,7 @@ export default class Tower {
         closest = distance
 
         target.value = intersection
-        target.element = mob
+        target.element = container
       }
     })
 
@@ -200,7 +188,7 @@ export default class Tower {
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.strokeLine({ realA: this.fireMuzzle, realB: this.fireTarget })
     }
-    const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Arc[]
+    const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
 
     this.scene.graphics.fillStyle(0x0000FF)
     const nearest = this.getNearest(mobs)
