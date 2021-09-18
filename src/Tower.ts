@@ -192,7 +192,7 @@ export default class Tower {
       ? Infinity
       : now - this.fireTime
 
-    const firing = fireDifference < 1000
+    const firing = fireDifference < 500
     if (firing) {
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.strokeLine({ realA: this.fireMuzzle, realB: this.fireTarget })
@@ -212,21 +212,22 @@ export default class Tower {
       } else {
         this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
       }
-      this.scene.graphics.strokeLineShape(tracer)
 
-      this.scene.graphics.fillStyle(0x00FF00)
+      if (!firing) {
+        this.scene.graphics.strokeLineShape(tracer)
 
-      const radians = Phaser.Math.Angle.Between(
-        this.container.x, this.container.y, nearest.x, nearest.y
-      )
+        const radians = Phaser.Math.Angle.Between(
+          this.container.x, this.container.y, nearest.x, nearest.y
+        )
 
-      const rotated = Phaser.Math.Angle.RotateTo(
-        this.container.rotation,
-        radians,
-        0.001 * Math.PI
-      )
+        const rotated = Phaser.Math.Angle.RotateTo(
+          this.container.rotation,
+          radians,
+          0.001 * Math.PI
+        )
 
-      this.container.rotation = rotated
+        this.container.rotation = rotated
+      }
     }
   }
 }
