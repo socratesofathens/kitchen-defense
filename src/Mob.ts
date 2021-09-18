@@ -3,6 +3,8 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Mob extends Actor {
+  private readonly speed = 0.0001
+
   constructor ({ scene, position, radius, color = 0xFFFFFF }: {
     scene: Scene
     position: Position
@@ -43,14 +45,35 @@ export default class Mob extends Actor {
     }
   }
 
-  setVelocity ({ x, y }: {
-    x: number
-    y: number
+  setVelocity ({ velocity, realVelocity }: {
+    velocity?: Position
+    realVelocity?: Position
   }): void {
-    const realX = this.scene.getReal(x)
-    const realY = this.scene.getReal(y)
+    if (this.container.body != null) {
+      realVelocity = this.scene.checkRealPosition({
+        position: velocity, realPosition: realVelocity
+      })
 
-    this.container.body.velocity.x = realX
-    this.container.body.velocity.y = realY
+      this.container.body.velocity.x = realVelocity.x
+      this.container.body.velocity.y = realVelocity.y
+    }
+  }
+
+  walk (): void {
+    const realSpeed = this.scene.getReal(this.speed)
+    const velocity = this.scene.physics.velocityFromAngle(
+      this.container.angle, realSpeed
+    )
+
+    this.setVelocity({ velocity })
+  }
+
+  update (): void {
+    super.update()
+
+    const realPosition = this.scene.sugar.getRealPosition()
+    this.rotateTo({ realPosition, rate: 0.01 })
+
+    this.walk()
   }
 }

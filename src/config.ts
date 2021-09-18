@@ -9,7 +9,10 @@ const config = {
   width: 1600,
   height: 900,
   physics: {
-    default: 'arcade'
+    default: 'arcade',
+    arcade: {
+      debug: true
+    }
   },
   scene: Scene
 }

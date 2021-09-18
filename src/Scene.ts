@@ -1,7 +1,9 @@
 import Phaser from 'phaser'
+import Actor from './Actor'
 
 import { HEIGHT, RATIO } from './config'
 import Mob from './Mob'
+import Sugar from './Sugar'
 import Tower from './Tower'
 import { Position, Size } from './types'
 import worker from './worker.png'
@@ -11,18 +13,11 @@ export default class Scene extends Phaser.Scene {
   public mobs!: Phaser.Physics.Arcade.Group
   public ORIGIN: Position = { x: 0, y: 0 }
   public statics!: Phaser.Physics.Arcade.StaticGroup
-  public readonly towers: Tower[] = []
+  public sugar!: Sugar
 
-  private readonly building!: Phaser.GameObjects.Arc
-  private fireTime!: number
-  private fireTarget!: Position
-  private fireMuzzle!: Position
-  private readonly gun!: Phaser.GameObjects.Rectangle
+  public readonly actors: Actor[] = []
+
   private queen!: Mob
-  private readonly muzzle!: Phaser.GameObjects.Arc
-  private readonly tower!: Tower
-  private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
-  private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -36,18 +31,15 @@ export default class Scene extends Phaser.Scene {
     this.graphics = this.add.graphics()
 
     this.mobs = this.physics.add.group()
-    const position = { x: 0.150, y: 0.4 }
+    const position = { x: 0.8, y: 0.1 }
     this.queen = new Mob({ scene: this, position, radius: 0.05 })
-    const worker = this.createWorker()
-    const velocity = { x: -0.175, y: 0.1 }
-    worker.setVelocity(velocity)
+    // this.createWorker()
 
     this.physics.add.collider(this.mobs, this.mobs)
 
     this.statics = this.physics.add.staticGroup()
-    this.physics.add.collider(this.statics, this.mobs)
 
-    this.setupTowers()
+    // this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -61,6 +53,8 @@ export default class Scene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off(Phaser.Input.Events.POINTER_UP)
     })
+
+    this.sugar = new Sugar(this)
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -192,19 +186,11 @@ export default class Scene extends Phaser.Scene {
   }
 
   createWorker (): Mob {
-    const x = Math.random()
+    const x = Math.random() * RATIO
     const y = Math.random()
 
     const position = { x, y }
     const worker = new Mob({ scene: this, position, radius: 0.01 })
-
-    const dX = Math.random()
-    const vX = (dX / 3) + 0.1
-
-    const dY = Math.random()
-    const vY = (dY / 3) + 0.1
-
-    worker.setVelocity({ x: vX, y: vY })
 
     return worker
   }
@@ -219,32 +205,6 @@ export default class Scene extends Phaser.Scene {
     realRadius = this.checkRealNumber({ value: radius, real: realRadius })
 
     this.graphics.fillCircle(realPosition.x, realPosition.y, realRadius)
-  }
-
-  fire ({ now, target, position }: {
-    now: number
-    target: Phaser.GameObjects.Arc
-    position: Position
-  }): void {
-    this.fireTime = now
-    this.fireTarget = position
-
-    this.muzzle.getWorldTransformMatrix(
-      this.tempMatrix, this.tempParentMatrix
-    )
-    const decomposed: any = this.tempMatrix.decomposeMatrix()
-    this.fireMuzzle = {
-      x: decomposed.translateX, y: decomposed.translateY
-    }
-
-    target.destroy()
-
-    this.createWorker()
-
-    const length = this.mobs.getLength()
-    if (length < 10) {
-      this.createWorker()
-    }
   }
 
   getLineToCircle ({ line, circle }: {
@@ -327,11 +287,8 @@ export default class Scene extends Phaser.Scene {
     const horizontal = this.createRange(0.2)
     horizontal.forEach(y => this.strokeHorizontal(y))
 
-    const position = { x: 0.5, y: 0.5 }
-    this.queen.moveTo({ position, speed: 0.01 })
-
-    this.towers.forEach(tower => {
-      tower.update()
+    this.actors.forEach(actor => {
+      actor.update()
     })
   }
 }

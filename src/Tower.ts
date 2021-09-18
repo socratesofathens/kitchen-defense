@@ -43,8 +43,6 @@ export default class Tower extends Actor {
 
     this.tempMatrix = new Phaser.GameObjects.Components.TransformMatrix()
     this.tempParentMatrix = new Phaser.GameObjects.Components.TransformMatrix()
-
-    this.scene.towers.push(this)
   }
 
   attack ({ now, tracer, enemies }: {
@@ -176,6 +174,8 @@ export default class Tower extends Actor {
   }
 
   update (): void {
+    super.update()
+
     const now = Date.now()
 
     const unfired = isNaN(this.fireTime)
@@ -193,7 +193,11 @@ export default class Tower extends Actor {
     this.scene.graphics.fillStyle(0x0000FF)
     const nearest = this.getNearest(mobs)
 
-    if (nearest != null) {
+    const waiting = !firing
+    if (waiting && nearest != null) {
+      const realPosition = { x: nearest.x, y: nearest.y }
+      this.rotateTo({ realPosition })
+
       const tracer = this.createTracer()
       const recharged = fireDifference > 2000
       if (recharged) {
@@ -204,21 +208,7 @@ export default class Tower extends Actor {
         this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
       }
 
-      if (!firing) {
-        this.scene.graphics.strokeLineShape(tracer)
-
-        const radians = Phaser.Math.Angle.Between(
-          this.container.x, this.container.y, nearest.x, nearest.y
-        )
-
-        const rotated = Phaser.Math.Angle.RotateTo(
-          this.container.rotation,
-          radians,
-          0.001 * Math.PI
-        )
-
-        this.container.rotation = rotated
-      }
+      this.scene.graphics.strokeLineShape(tracer)
     }
   }
 }
