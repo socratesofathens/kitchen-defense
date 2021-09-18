@@ -5,14 +5,15 @@ import { Position } from './types'
 export default class Mob extends Actor {
   private readonly speed = 0.0001
 
-  constructor ({ scene, position, radius, color = 0xFFFFFF }: {
+  constructor ({ scene, position, realPosition, radius, color = 0xFFFFFF }: {
     scene: Scene
-    position: Position
+    position?: Position
+    realPosition?: Position
     radius: number
     color?: number
   }) {
     super({
-      scene, position, radius, groups: [scene.mobs]
+      scene, position, realPosition, radius, groups: [scene.mobs]
     })
 
     const shape = this.scene.createCircle({
@@ -26,8 +27,7 @@ export default class Mob extends Actor {
     this.container.add(sprite)
 
     if (this.container.body instanceof Phaser.Physics.Arcade.Body) {
-      this.container.body.setBounce(1, 1)
-      this.container.body.collideWorldBounds = true
+      this.container.body.setBounce(10, 10)
     }
   }
 

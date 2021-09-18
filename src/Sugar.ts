@@ -49,8 +49,11 @@ export default class Sugar extends Actor {
         })
       }
 
+      if (mob instanceof Phaser.GameObjects.Arc) {
+        const death = { x: mob.x, y: mob.y }
+        this.scene.createWorker({ realPosition: death })
+      }
       mob.destroy()
-      this.scene.createWorker()
     }
 
     this.scene.physics.add.collider(

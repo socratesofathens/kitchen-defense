@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
 
-import { HALF_RATIO, HEIGHT, RATIO } from './config'
+import { HALF_HEIGHT, HALF_RATIO, HALF_WIDTH, HEIGHT, RATIO, WIDTH } from './config'
 import Mob from './Mob'
 import Sugar from './Sugar'
 import Tower from './Tower'
@@ -9,18 +9,24 @@ import { Position, Size } from './types'
 import worker from './worker.png'
 
 export default class Scene extends Phaser.Scene {
-  public CENTER: Position = { x: HALF_RATIO, y: 0.5 }
-  public graphics!: Phaser.GameObjects.Graphics
+  public actors: Actor[] = []
+  public battery = 0
   public mobs!: Phaser.Physics.Arcade.Group
-  public ORIGIN: Position = { x: 0, y: 0 }
-  public REAL_CENTER!: Position
+  public graphics!: Phaser.GameObjects.Graphics
+  public pointerPosition!: Position
   public statics!: Phaser.Physics.Arcade.StaticGroup
   public sugar!: Sugar
   public over = false
 
-  public readonly actors: Actor[] = []
+  public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
+  public readonly ORIGIN: Position = { x: 0, y: 0 }
 
+  protected REAL_CENTER!: Position
+
+  private full = false
   private queen!: Mob
+
+  private readonly maximum = 5000
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -37,30 +43,42 @@ export default class Scene extends Phaser.Scene {
     this.mobs = this.physics.add.group()
     const position = { x: 0.1, y: 0.1 }
     this.queen = new Mob({ scene: this, position, radius: 0.05 })
-    this.createWorker()
+    this.createWorker({ position: this.ORIGIN })
 
     this.physics.add.collider(this.mobs, this.mobs)
 
     this.statics = this.physics.add.staticGroup()
+    this.physics.add.collider(this.mobs, this.statics)
 
     this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
       (pointer: Phaser.Input.Pointer) => {
-        if (!this.over) {
+        if (this.full) {
           const realPosition = { x: pointer.worldX, y: pointer.worldY }
 
           this.createTower({ realPosition })
+
+          this.battery = 0
+          this.full = false
         }
+      }
+    )
+
+    this.sugar = new Sugar(this)
+
+    this.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      (pointer: Phaser.Input.Pointer) => {
+        this.pointerPosition = { x: pointer.x, y: pointer.y }
       }
     )
 
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off(Phaser.Input.Events.POINTER_UP)
+      this.input.off(Phaser.Input.Events.POINTER_MOVE)
     })
-
-    this.sugar = new Sugar(this)
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -182,19 +200,28 @@ export default class Scene extends Phaser.Scene {
     return rectangle
   }
 
-  createText ({ position, realPosition, content, color, fontSize }: {
+  createText ({ position, realPosition, content, color = 'black', fontSize }: {
     position?: Position
     realPosition?: Position
-    content: string
-    color: string
-    fontSize: number
+    content: string | number
+    color?: string
+    fontSize?: number
   }): Phaser.GameObjects.Text {
     realPosition = this.checkRealPosition({ position, realPosition })
-    const realFontSize = this.getReal(fontSize)
 
-    const style = { fontFamily: 'Arial', color }
-    const text = this.add.text(realPosition.x, realPosition.y, content, style)
-    text.setFontSize(realFontSize)
+    const style: { fontFamily: string, color?: string } = { fontFamily: 'Arial' }
+    if (color != null) {
+      style.color = color
+    }
+
+    const string = content.toString()
+    const text = this.add.text(realPosition.x, realPosition.y, string, style)
+    if (fontSize != null) {
+      const realFontSize = this.getReal(fontSize)
+
+      text.setFontSize(realFontSize)
+    }
+
     text.setOrigin(0.5, 0.5)
 
     return text
@@ -209,14 +236,52 @@ export default class Scene extends Phaser.Scene {
     return tower
   }
 
-  createWorker (): Mob {
-    const x = Math.random() * RATIO
-    const y = Math.random()
+  createWorker ({ position, realPosition, reloadTime = 0 }: {
+    position?: Position
+    realPosition?: Position
+    reloadTime?: number
+  }): Mob {
+    const length = this.mobs.getLength()
+    if (length < 1000) {
+      const death = this.checkRealPosition({ position, realPosition })
+      const deathTop = death.y < HALF_HEIGHT
+      const deathLeft = death.x < HALF_WIDTH
 
-    const position = { x, y }
-    const worker = new Mob({ scene: this, position, radius: 0.01 })
+      const distance = Phaser.Math.Distance.Between(
+        death.x, death.y, this.REAL_CENTER.x, this.REAL_CENTER.y
+      )
 
-    return worker
+      const x = deathLeft
+        ? HALF_WIDTH + distance
+        : HALF_WIDTH - distance
+
+      const y = deathTop
+        ? HALF_HEIGHT + reloadTime
+        : HALF_HEIGHT - reloadTime
+
+      const insideLeft = x > 0
+      const insideRight = insideLeft && x < WIDTH
+      const insideHorizontal = insideLeft && insideRight
+
+      const insideTop = y > 0
+      const insideBottom = y < HEIGHT
+      const insideVertical = insideTop && insideBottom
+
+      const inside = insideHorizontal && insideVertical
+      const spawnY = inside
+        ? deathTop
+          ? y + HEIGHT
+          : y - HEIGHT
+        : y
+
+      const spawn = { x, y: spawnY }
+      console.log('spawn test:', spawn)
+      const worker = new Mob({ scene: this, realPosition: spawn, radius: 0.01 })
+
+      return worker
+    }
+
+    throw new Error('Too many workers')
   }
 
   fillCircle ({ position, radius, realPosition, realRadius }: {
@@ -283,6 +348,15 @@ export default class Scene extends Phaser.Scene {
     positions.forEach(position => this.createTower({ position }))
   }
 
+  spendBattery (value: number): void {
+    this.battery = this.battery - value
+    if (this.battery < 0) {
+      this.battery = 0
+    }
+
+    this.full = false
+  }
+
   strokeLine ({ a, b, realA, realB }: {
     a?: Position
     b?: Position
@@ -308,7 +382,7 @@ export default class Scene extends Phaser.Scene {
     this.strokeLine({ a, b })
   }
 
-  update (): void {
+  update (timestep: number, delta: number): void {
     this.graphics.clear()
 
     const vertical = this.createRangeRatio(0.2)
@@ -320,5 +394,32 @@ export default class Scene extends Phaser.Scene {
     this.actors.forEach(actor => {
       actor.update()
     })
+
+    this.battery = this.battery + delta
+    if (this.battery > this.maximum) {
+      this.battery = this.maximum
+      this.full = true
+    }
+
+    if (this.full) {
+      this.graphics.fillStyle(0x00FF00, 0.5)
+    } else {
+      this.graphics.fillStyle(0xFF0000, 0.5)
+    }
+
+    if (this.pointerPosition != null) {
+      const percent = this.battery / this.maximum
+      const angle = 360 * percent
+      this.graphics.slice(
+        this.pointerPosition.x,
+        this.pointerPosition.y,
+        20,
+        Phaser.Math.DegToRad(angle),
+        Phaser.Math.DegToRad(0),
+        true
+      )
+    }
+
+    this.graphics.fillPath()
   }
 }

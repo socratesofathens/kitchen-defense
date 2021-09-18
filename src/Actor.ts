@@ -6,6 +6,7 @@ export default class Actor {
   container: Phaser.GameObjects.Container
   radius: number
   realRadius: number
+  realPosition: Position
   scene: Scene
 
   constructor ({ scene, position, realPosition, radius, groups }: {
@@ -17,6 +18,7 @@ export default class Actor {
   }) {
     this.scene = scene
     this.radius = radius
+    this.realPosition = this.scene.checkRealPosition({ position, realPosition })
     this.realRadius = this.scene.getReal(this.radius)
 
     const realDiameter = this.realRadius * 2

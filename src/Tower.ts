@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
+import { HEIGHT, WIDTH } from './config'
 import Scene from './Scene'
 import { Position, Result } from './types'
 
@@ -7,6 +8,7 @@ export default class Tower extends Actor {
   private fireTime!: number
   private fireTarget!: Position
   private fireMuzzle!: Position
+
   private readonly range!: number
   private readonly realRange!: number
   private readonly muzzle!: Phaser.GameObjects.Arc
@@ -56,7 +58,7 @@ export default class Tower extends Actor {
       this.fire({
         now,
         target: target.element,
-        position: target.value
+        realPosition: target.value
       })
     }
   }
@@ -75,14 +77,16 @@ export default class Tower extends Actor {
     return tracer
   }
 
-  fire ({ now, target, position }: {
+  fire ({ now, target, realPosition }: {
     now: number
     target: Phaser.GameObjects.Container
-    position: Position
+    realPosition: Position
   }): void {
+    const reloadTime = this.fireTime - now
+
     // TODO Let lasers kill multiple units
     this.fireTime = now
-    this.fireTarget = position
+    this.fireTarget = realPosition
 
     this.muzzle.getWorldTransformMatrix(
       this.tempMatrix, this.tempParentMatrix
@@ -94,12 +98,10 @@ export default class Tower extends Actor {
 
     target.destroy()
 
-    this.scene.createWorker()
+    this.scene.spendBattery(100)
 
-    const length = this.scene.mobs.getLength()
-    if (length < 10) {
-      this.scene.createWorker()
-    }
+    this.scene.createWorker({ realPosition })
+    this.scene.createWorker({ realPosition })
   }
 
   getNearest (
@@ -111,6 +113,14 @@ export default class Tower extends Actor {
       const distance = Phaser.Math.Distance.Between(
         this.container.x, this.container.y, target.x, target.y
       )
+
+      const left = target.x < 0
+      const right = target.x > WIDTH
+      const top = target.y < 0
+      const bottom = target.y > HEIGHT
+      if (left || right || top || bottom) {
+        return
+      }
 
       const far = distance > this.realRange
       if (far) {
@@ -187,6 +197,11 @@ export default class Tower extends Actor {
     if (firing) {
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.strokeLine({ realA: this.fireMuzzle, realB: this.fireTarget })
+
+      this.scene.graphics.lineStyle(1, 0xFF0000, 0.1)
+      this.scene.strokeLine({
+        realA: this.realPosition, realB: this.scene.pointerPosition
+      })
     }
     const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
 
