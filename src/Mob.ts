@@ -68,11 +68,13 @@ export default class Mob extends Actor {
     this.setVelocity({ velocity })
   }
 
-  update (): void {
-    super.update()
+  update ({ now, delta }: {
+    now: number
+    delta: number
+  }): void {
+    super.update({ now, delta })
 
-    const realPosition = this.scene.sugar.getRealPosition()
-    this.rotateTo({ realPosition, rate: 0.01 })
+    this.rotateTo({ realPosition: this.scene.sugar.realPosition, rate: 0.01 })
 
     this.walk()
   }

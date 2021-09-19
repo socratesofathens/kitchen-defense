@@ -6,7 +6,6 @@ export default class Actor {
   container: Phaser.GameObjects.Container
   radius: number
   realRadius: number
-  realPosition: Position
   scene: Scene
 
   constructor ({ scene, position, realPosition, radius, groups }: {
@@ -18,7 +17,6 @@ export default class Actor {
   }) {
     this.scene = scene
     this.radius = radius
-    this.realPosition = this.scene.checkRealPosition({ position, realPosition })
     this.realRadius = this.scene.getReal(this.radius)
 
     const realDiameter = this.realRadius * 2
@@ -60,7 +58,38 @@ export default class Actor {
     return rotated
   }
 
+  rotateToFully ({ position, realPosition }: {
+    position?: Position
+    realPosition?: Position
+  }): number {
+    realPosition = this.scene.checkRealPosition({ position, realPosition })
+
+    const radians = Phaser.Math.Angle.Between(
+      this.container.x, this.container.y, realPosition.x, realPosition.y
+    )
+
+    this.container.rotation = radians
+
+    return radians
+  }
+
+  rotateToFullyBack ({ position, realPosition }: {
+    position?: Position
+    realPosition?: Position
+  }): number {
+    const rotation = this.rotateToFully({ position, realPosition })
+
+    const radians = rotation + Math.PI
+    this.container.rotation = radians
+
+    return radians
+  }
+
   getRealPosition (): Position {
+    if (this.container.body == null) {
+      console.warn('Actor has no body')
+    }
+
     if ('x' in this.container.body && 'y' in this.container.body) {
       const position = { x: this.container.x, y: this.container.y }
 
@@ -70,5 +99,8 @@ export default class Actor {
     throw new Error('Actor has no body position')
   }
 
-  update (): void {}
+  update ({ now, delta }: {
+    now: number
+    delta: number
+  }): void {}
 }

@@ -5,18 +5,20 @@ import { Position } from './types'
 
 export default class Sugar extends Actor {
   public readonly position: Position
+  public readonly realPosition: Position
 
   constructor (scene: Scene) {
-    const halfRatio = RATIO / 2
-    const position = { x: halfRatio, y: 0.5 }
+    const radius = 0.25
+    const position = { x: RATIO - radius, y: 1 - radius }
     super({
-      scene, position, radius: 0.25
+      scene, position, radius
     })
     if (this.container.body instanceof Phaser.Physics.Arcade.Body) {
       this.container.body.setImmovable()
     }
 
     this.position = position
+    this.realPosition = this.scene.getRealPosition(position)
 
     const circle = this.scene.createCircle({
       position: this.scene.ORIGIN, radius: this.radius, color: 0xFFFFFF
@@ -48,7 +50,6 @@ export default class Sugar extends Actor {
           fontSize: 0.25
         })
       }
-      console.log('mob test:', mob)
 
       if (mob instanceof Phaser.GameObjects.Arc || mob instanceof Phaser.GameObjects.Container) {
         const death = { x: mob.x, y: mob.y }

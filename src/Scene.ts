@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
 
-import { HALF_RATIO, HEIGHT, RATIO, WIDTH } from './config'
+import { HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, WIDTH } from './config'
 import Mob from './Mob'
 import Sugar from './Sugar'
 import Tower from './Tower'
@@ -24,6 +24,7 @@ export default class Scene extends Phaser.Scene {
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
+  public readonly SPACE: number = 0.1
 
   protected REAL_CENTER!: Position
 
@@ -240,15 +241,27 @@ export default class Scene extends Phaser.Scene {
     return tower
   }
 
-  createWorker ({ death = this.ORIGIN, mobsLength, distance }: {
+  createWorker ({ death = this.ORIGIN, time, mobsLength, distance }: {
     death?: Position
     time?: number
     mobsLength: number
     distance: number
   }): Mob {
+    const currentRadians = Phaser.Math.Angle.Between(
+      death.x, death.y, this.sugar.realPosition.x, this.sugar.realPosition.y
+    )
+    const currentDegrees = Phaser.Math.RadToDeg(currentRadians)
+
+    const maximum = 120
+
     const ratio = distance / WIDTH
-    const degrees = 360 * ratio
-    const radians = Phaser.Math.DegToRad(degrees)
+    const degrees = maximum * ratio
+
+    const combinedDegrees = currentDegrees + degrees
+    const moduloDegrees = combinedDegrees % maximum
+    const absoluteDegrees = Math.abs(moduloDegrees)
+    const newDegrees = absoluteDegrees - 30
+    const radians = Phaser.Math.DegToRad(newDegrees)
 
     const mobsLog = mobsLength > 0
       ? Math.log(mobsLength)
@@ -256,8 +269,13 @@ export default class Scene extends Phaser.Scene {
 
     const newDistance = WIDTH + ((WIDTH / 10) * mobsLog)
 
+    const base = { x: 0, y: HALF_HEIGHT }
     const rotated = Phaser.Math.RotateAroundDistance(
-      this.sugar.realPosition, death.x, death.y, radians, newDistance
+      base,
+      this.sugar.realPosition.x,
+      this.sugar.realPosition.y,
+      radians,
+      newDistance
     )
 
     const spawn = rotated
@@ -275,10 +293,15 @@ export default class Scene extends Phaser.Scene {
     if (mobsLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
-      const length = Math.ceil(time / 1000) + 1
+      const logTime = Math.log(time)
+      const fraction = 3
+      const fractionTime = logTime > 0
+        ? logTime / fraction
+        : 0
+      const length = Math.ceil(fractionTime) + 1
 
       const distance = Phaser.Math.Distance.Between(
-        death.x, death.y, this.REAL_CENTER.x, this.REAL_CENTER.y
+        death.x, death.y, this.sugar.realPosition.x, this.sugar.realPosition.y
       )
 
       Array.from(
@@ -396,7 +419,7 @@ export default class Scene extends Phaser.Scene {
     this.strokeLine({ a, b })
   }
 
-  update (timestep: number, delta: number): void {
+  update (now: number, delta: number): void {
     this.graphics.clear()
 
     const vertical = this.createRangeRatio(0.2)
@@ -407,8 +430,40 @@ export default class Scene extends Phaser.Scene {
 
     this.open = true
     this.actors.forEach(actor => {
-      actor.update()
+      actor.update({ now, delta })
+      if (actor.container.body != null) {
+        if (this.sugar.realPosition == null) {
+          console.warn('no sugar')
+        }
+        const realPosition = actor.getRealPosition()
+        if (realPosition == null) {
+          console.warn('no actor')
+        } else {
+          // this.strokeLine({
+          //   realA: this.sugar.realPosition, realB: realPosition
+          // })
+        }
+      }
     })
+
+    if (this.pointerPosition != null) {
+      const distance = Phaser.Math.Distance.Between(
+        this.sugar.realPosition.x,
+        this.sugar.realPosition.y,
+        this.pointerPosition.x,
+        this.pointerPosition.y
+      )
+
+      const radius = this.sugar.radius + 0.05
+      const space = this.sugar.container.scale * radius
+      const realSpace = this.getReal(space)
+      if (distance < realSpace) {
+        this.open = false
+
+        this.graphics.fillStyle(0xFFFF00)
+        this.fillCircle({ realPosition: this.sugar.realPosition, radius })
+      }
+    }
 
     this.battery = this.battery + delta
     if (this.battery > this.maximum) {
@@ -417,6 +472,21 @@ export default class Scene extends Phaser.Scene {
     }
 
     this.ready = this.full && this.open
+
+    // this.graphics.fillStyle(0x00FFFF, 1)
+    // this.fillCircle({ realPosition: this.sugar.realPosition, radius: 0.3 })
+
+    // this.graphics.fillStyle(0xFF00FF, 1)
+    // const fake = { x: 0, y: HEIGHT }
+    // this.fillCircle({ realPosition: fake, radius: 0.3 })
+
+    // this.graphics.fillStyle(0x0000FF, 1)
+    // const radians = Phaser.Math.DegToRad(120)
+    // const rotated = Phaser.Math.RotateAroundDistance(
+    //   fake, this.sugar.realPosition.x, this.sugar.realPosition.y, radians, 400
+    // )
+
+    // this.fillCircle({ realPosition: rotated, radius: 0.1 })
 
     if (this.ready) {
       this.graphics.fillStyle(0x00FF00, 0.5)
@@ -427,10 +497,11 @@ export default class Scene extends Phaser.Scene {
     if (this.pointerPosition != null) {
       const percent = this.battery / this.maximum
       const angle = 360 * percent
+      const realRadius = this.getReal(this.SPACE)
       this.graphics.slice(
         this.pointerPosition.x,
         this.pointerPosition.y,
-        20,
+        realRadius,
         Phaser.Math.DegToRad(angle),
         Phaser.Math.DegToRad(0),
         true

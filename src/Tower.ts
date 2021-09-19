@@ -8,10 +8,12 @@ export default class Tower extends Actor {
   private fireTime!: number
   private unfired = true
 
+  private readonly laserTime = 5000
+  private readonly muzzle!: Phaser.GameObjects.Arc
   private readonly range!: number
   private readonly realRange!: number
+  private readonly realPosition!: Position
   private readonly rechargeTime = 1000
-  private readonly muzzle!: Phaser.GameObjects.Arc
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
 
@@ -23,6 +25,8 @@ export default class Tower extends Actor {
     super({
       scene, position, realPosition, radius: 0.01, groups: [scene.statics]
     })
+
+    this.realPosition = this.getRealPosition()
 
     this.range = 0.25
     this.realRange = this.scene.getReal(this.range)
@@ -46,6 +50,8 @@ export default class Tower extends Actor {
 
     this.tempMatrix = new Phaser.GameObjects.Components.TransformMatrix()
     this.tempParentMatrix = new Phaser.GameObjects.Components.TransformMatrix()
+
+    this.rotateToFullyBack({ realPosition: this.scene.sugar.realPosition })
 
     this.scene.towers.push(this)
   }
@@ -82,8 +88,6 @@ export default class Tower extends Actor {
   }): void {
     this.fireTime = now
 
-    this.scene.spendBattery(25)
-
     this.unfired = false
   }
 
@@ -99,16 +103,26 @@ export default class Tower extends Actor {
     return position
   }
 
+  getIntersection ({ line, container }: {
+    line: Phaser.Geom.Line
+    container: Phaser.GameObjects.Container
+  }): Position | undefined {
+    const radius = container.width / 2
+    const circle = new Phaser.Geom.Circle(
+      container.x, container.y, radius
+    )
+
+    const intersection = this.scene.getLineToCircle({ line, circle })
+
+    return intersection
+  }
+
   getNearest (
     targets: Phaser.GameObjects.Container[]
   ): Phaser.GameObjects.Container | undefined {
     const closest: Result<number> = { value: Infinity }
 
     targets.forEach((target) => {
-      const distance = Phaser.Math.Distance.Between(
-        this.container.x, this.container.y, target.x, target.y
-      )
-
       const left = target.x < 0
       const right = target.x > WIDTH
       const top = target.y < 0
@@ -117,6 +131,9 @@ export default class Tower extends Actor {
         return
       }
 
+      const distance = Phaser.Math.Distance.Between(
+        this.container.x, this.container.y, target.x, target.y
+      )
       const far = distance > this.realRange
       if (far) {
         return
@@ -151,13 +168,14 @@ export default class Tower extends Actor {
 
     let closest = Infinity
     targets.forEach((container) => {
-      const radius = container.width / 2
-      const circle = new Phaser.Geom.Circle(
-        container.x, container.y, radius
-      )
-
-      const intersection = this.scene.getLineToCircle({ line, circle })
-
+      const left = container.x < 0
+      const right = container.x > WIDTH
+      const top = container.y < 0
+      const bottom = container.y > HEIGHT
+      if (left || right || top || bottom) {
+        return
+      }
+      const intersection = this.getIntersection({ line, container })
       if (intersection == null) {
         return
       }
@@ -178,24 +196,18 @@ export default class Tower extends Actor {
     return target
   }
 
-  kill ({ tracer, enemies }: {
+  kill ({ tracer, enemies, now }: {
     tracer: Phaser.Geom.Line
     enemies: Phaser.GameObjects.Container[]
+    now: number
   }): void {
     enemies.forEach((container) => {
-      const radius = container.width / 2
-      const circle = new Phaser.Geom.Circle(
-        container.x, container.y, radius
-      )
-
-      const intersection = this.scene.getLineToCircle({ line: tracer, circle })
-
+      const intersection = this.getIntersection({ line: tracer, container })
       if (intersection == null) {
         return
       }
 
       const realPosition = { x: container.x, y: container.y }
-      const now = Date.now()
       const time = now - this.scene.killTime
       this.scene.killTime = now
 
@@ -205,10 +217,11 @@ export default class Tower extends Actor {
     })
   }
 
-  update (): void {
-    super.update()
-
-    const now = Date.now()
+  update ({ now, delta }: {
+    now: number
+    delta: number
+  }): void {
+    super.update({ now, delta })
 
     const fireDifference = this.unfired
       ? Infinity
@@ -217,17 +230,29 @@ export default class Tower extends Actor {
     const tracer = this.createTracer()
     const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
 
-    const firing = fireDifference < 500
+    const firing = fireDifference < this.laserTime
     if (firing) {
-      this.kill({ tracer, enemies: mobs })
+      const exponentLength = this.scene.towers.length * this.scene.towers.length
+      const fractionLength = exponentLength / 10
+      const divisorLength = fractionLength < 2
+        ? 2
+        : fractionLength
+      const batteryCost = delta / divisorLength
+      this.scene.spendBattery(batteryCost)
+      this.kill({ tracer, enemies: mobs, now })
 
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.graphics.strokeLineShape(tracer)
 
       this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
-      this.scene.strokeLine({
-        realA: this.realPosition, realB: this.scene.pointerPosition
-      })
+      if (this.realPosition == null) {
+        throw new Error('Tower has no real position')
+      }
+      if (this.scene.pointerPosition != null) {
+        this.scene.strokeLine({
+          realA: this.realPosition, realB: this.scene.pointerPosition
+        })
+      }
     } else {
       this.scene.graphics.fillStyle(0x0000FF)
       const nearest = this.getNearest(mobs)
@@ -257,12 +282,14 @@ export default class Tower extends Actor {
         this.scene.pointerPosition.y
       )
 
-      const realSpace = this.scene.getReal(0.2)
+      const realSpace = this.scene.getReal(this.scene.SPACE)
       if (distance < realSpace) {
         this.scene.open = false
 
-        this.scene.graphics.fillStyle(0xFF0000, 0.25)
-        this.scene.fillCircle({ realPosition: this.realPosition, radius: 0.02 })
+        this.scene.graphics.fillStyle(0xFFFF00)
+        this.scene.fillCircle({
+          realPosition: this.realPosition, radius: this.scene.SPACE
+        })
       }
     }
   }
