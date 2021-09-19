@@ -48,10 +48,11 @@ export default class Sugar extends Actor {
           fontSize: 0.25
         })
       }
+      console.log('mob test:', mob)
 
-      if (mob instanceof Phaser.GameObjects.Arc) {
+      if (mob instanceof Phaser.GameObjects.Arc || mob instanceof Phaser.GameObjects.Container) {
         const death = { x: mob.x, y: mob.y }
-        this.scene.createWorker({ realPosition: death })
+        this.scene.createWorkers({ realPosition: death })
       }
       mob.destroy()
     }

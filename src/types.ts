@@ -2,6 +2,8 @@ export type AnyBody = Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticB
 
 export type AnyGroup = Phaser.Physics.Arcade.Group | Phaser.Physics.Arcade.StaticGroup
 
+export type AnyObject = Phaser.GameObjects.Arc | Phaser.GameObjects.Container
+
 export interface Position {
   x: number
   y: number

@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
 
-import { HALF_HEIGHT, HALF_RATIO, HALF_WIDTH, HEIGHT, RATIO, WIDTH } from './config'
+import { HALF_RATIO, HEIGHT, RATIO, WIDTH } from './config'
 import Mob from './Mob'
 import Sugar from './Sugar'
 import Tower from './Tower'
@@ -17,6 +17,7 @@ export default class Scene extends Phaser.Scene {
   public statics!: Phaser.Physics.Arcade.StaticGroup
   public sugar!: Sugar
   public over = false
+  public start = Date.now()
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -43,14 +44,15 @@ export default class Scene extends Phaser.Scene {
     this.mobs = this.physics.add.group()
     const position = { x: 0.1, y: 0.1 }
     this.queen = new Mob({ scene: this, position, radius: 0.05 })
-    this.createWorker({ position: this.ORIGIN })
+    this.sugar = new Sugar(this)
+    this.createWorkers({ position: this.ORIGIN })
 
     this.physics.add.collider(this.mobs, this.mobs)
 
     this.statics = this.physics.add.staticGroup()
     this.physics.add.collider(this.mobs, this.statics)
 
-    this.setupTowers()
+    // this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -65,8 +67,6 @@ export default class Scene extends Phaser.Scene {
         }
       }
     )
-
-    this.sugar = new Sugar(this)
 
     this.input.on(
       Phaser.Input.Events.POINTER_MOVE,
@@ -236,52 +236,65 @@ export default class Scene extends Phaser.Scene {
     return tower
   }
 
-  createWorker ({ position, realPosition, reloadTime = 0 }: {
+  createWorker ({ death = this.ORIGIN, mobsLength, distance }: {
+    death?: Position
+    time?: number
+    mobsLength: number
+    distance: number
+  }): Mob {
+    const ratio = distance / WIDTH
+    const degrees = 360 * ratio
+    const radians = Phaser.Math.DegToRad(degrees)
+
+    const mobsLog = mobsLength > 0
+      ? Math.log(mobsLength)
+      : 0
+
+    const newDistance = WIDTH + ((WIDTH / 10) * mobsLog)
+
+    const rotated = Phaser.Math.RotateAroundDistance(
+      this.sugar.realPosition, death.x, death.y, radians, newDistance
+    )
+
+    const spawn = rotated
+    console.log('spawn test:', spawn)
+    const worker = new Mob({ scene: this, realPosition: spawn, radius: 0.01 })
+
+    return worker
+  }
+
+  createWorkers ({ position, realPosition, time = 0 }: {
     position?: Position
     realPosition?: Position
-    reloadTime?: number
-  }): Mob {
-    const length = this.mobs.getLength()
-    if (length < 1000) {
+    time?: number
+  }): void {
+    const mobsLength = this.mobs.getLength()
+    console.log('mobs.length test:', mobsLength)
+    if (mobsLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
-      const deathTop = death.y < HALF_HEIGHT
-      const deathLeft = death.x < HALF_WIDTH
+
+      console.log('time test:', time)
+      const logTime = time > 0
+        ? Math.log(time)
+        : 1
+      console.log('logTime test:', logTime)
+
+      const length = Math.ceil(logTime / 2)
+      console.log('length test:', length)
 
       const distance = Phaser.Math.Distance.Between(
         death.x, death.y, this.REAL_CENTER.x, this.REAL_CENTER.y
       )
 
-      const x = deathLeft
-        ? HALF_WIDTH + distance
-        : HALF_WIDTH - distance
-
-      const y = deathTop
-        ? HALF_HEIGHT + reloadTime
-        : HALF_HEIGHT - reloadTime
-
-      const insideLeft = x > 0
-      const insideRight = insideLeft && x < WIDTH
-      const insideHorizontal = insideLeft && insideRight
-
-      const insideTop = y > 0
-      const insideBottom = y < HEIGHT
-      const insideVertical = insideTop && insideBottom
-
-      const inside = insideHorizontal && insideVertical
-      const spawnY = inside
-        ? deathTop
-          ? y + HEIGHT
-          : y - HEIGHT
-        : y
-
-      const spawn = { x, y: spawnY }
-      console.log('spawn test:', spawn)
-      const worker = new Mob({ scene: this, realPosition: spawn, radius: 0.01 })
-
-      return worker
+      Array.from(
+        { length },
+        (_, index) => this.createWorker({
+          death, time, mobsLength: mobsLength + index, distance
+        })
+      )
+    } else {
+      throw new Error('Too many workers')
     }
-
-    throw new Error('Too many workers')
   }
 
   fillCircle ({ position, radius, realPosition, realRadius }: {

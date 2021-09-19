@@ -8,9 +8,11 @@ export default class Tower extends Actor {
   private fireTime!: number
   private fireTarget!: Position
   private fireMuzzle!: Position
+  private unfired = true
 
   private readonly range!: number
   private readonly realRange!: number
+  private readonly rechargeTime = 2000
   private readonly muzzle!: Phaser.GameObjects.Arc
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
@@ -26,6 +28,7 @@ export default class Tower extends Actor {
 
     this.range = 0.5
     this.realRange = this.scene.getReal(this.range)
+    this.fireTime = Date.now()
 
     const base = this.scene.createCircle({
       position: this.scene.ORIGIN, radius: this.radius, color: 0xff0000
@@ -82,7 +85,7 @@ export default class Tower extends Actor {
     target: Phaser.GameObjects.Container
     realPosition: Position
   }): void {
-    const reloadTime = this.fireTime - now
+    const time = now - this.fireTime
 
     // TODO Let lasers kill multiple units
     this.fireTime = now
@@ -100,8 +103,9 @@ export default class Tower extends Actor {
 
     this.scene.spendBattery(100)
 
-    this.scene.createWorker({ realPosition })
-    this.scene.createWorker({ realPosition })
+    this.scene.createWorkers({ realPosition, time })
+
+    this.unfired = false
   }
 
   getNearest (
@@ -188,8 +192,7 @@ export default class Tower extends Actor {
 
     const now = Date.now()
 
-    const unfired = isNaN(this.fireTime)
-    const fireDifference = unfired
+    const fireDifference = this.unfired
       ? Infinity
       : now - this.fireTime
 
@@ -199,9 +202,11 @@ export default class Tower extends Actor {
       this.scene.strokeLine({ realA: this.fireMuzzle, realB: this.fireTarget })
 
       this.scene.graphics.lineStyle(1, 0xFF0000, 0.1)
-      this.scene.strokeLine({
-        realA: this.realPosition, realB: this.scene.pointerPosition
-      })
+      if (this.scene.pointerPosition != null) {
+        this.scene.strokeLine({
+          realA: this.realPosition, realB: this.scene.pointerPosition
+        })
+      }
     }
     const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
 
@@ -214,7 +219,7 @@ export default class Tower extends Actor {
       this.rotateTo({ realPosition })
 
       const tracer = this.createTracer()
-      const recharged = fireDifference > 2000
+      const recharged = fireDifference > this.rechargeTime
       if (recharged) {
         this.attack({ now, tracer, enemies: mobs })
 
