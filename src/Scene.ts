@@ -18,6 +18,7 @@ export default class Scene extends Phaser.Scene {
   public sugar!: Sugar
   public over = false
   public start = Date.now()
+  public killTime = Date.now()
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -273,13 +274,7 @@ export default class Scene extends Phaser.Scene {
     if (mobsLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
-      console.log('time test:', time)
-      const logTime = time > 0
-        ? Math.log(time)
-        : 1
-      console.log('logTime test:', logTime)
-
-      const length = Math.ceil(logTime / 2)
+      const length = Math.ceil(time / 1000) + 1
       console.log('length test:', length)
 
       const distance = Phaser.Math.Distance.Between(
@@ -293,7 +288,7 @@ export default class Scene extends Phaser.Scene {
         })
       )
     } else {
-      throw new Error('Too many workers')
+      console.warn('Too many mobile objects')
     }
   }
 

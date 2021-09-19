@@ -6,13 +6,11 @@ import { Position, Result } from './types'
 
 export default class Tower extends Actor {
   private fireTime!: number
-  private fireTarget!: Position
-  private fireMuzzle!: Position
   private unfired = true
 
   private readonly range!: number
   private readonly realRange!: number
-  private readonly rechargeTime = 2000
+  private readonly rechargeTime = 1000
   private readonly muzzle!: Phaser.GameObjects.Arc
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
@@ -58,11 +56,7 @@ export default class Tower extends Actor {
     const target = this.getTarget({ line: tracer, targets: enemies })
 
     if (target.element != null) {
-      this.fire({
-        now,
-        target: target.element,
-        realPosition: target.value
-      })
+      this.fire({ now, tracer })
     }
   }
 
@@ -80,32 +74,28 @@ export default class Tower extends Actor {
     return tracer
   }
 
-  fire ({ now, target, realPosition }: {
+  fire ({ now, tracer }: {
     now: number
-    target: Phaser.GameObjects.Container
-    realPosition: Position
+    tracer: Phaser.Geom.Line
   }): void {
-    const time = now - this.fireTime
-
     // TODO Let lasers kill multiple units
     this.fireTime = now
-    this.fireTarget = realPosition
 
+    this.scene.spendBattery(25)
+
+    this.unfired = false
+  }
+
+  getMuzzle (): Position {
     this.muzzle.getWorldTransformMatrix(
       this.tempMatrix, this.tempParentMatrix
     )
     const decomposed: any = this.tempMatrix.decomposeMatrix()
-    this.fireMuzzle = {
+    const position = {
       x: decomposed.translateX, y: decomposed.translateY
     }
 
-    target.destroy()
-
-    this.scene.spendBattery(100)
-
-    this.scene.createWorkers({ realPosition, time })
-
-    this.unfired = false
+    return position
   }
 
   getNearest (
@@ -187,6 +177,33 @@ export default class Tower extends Actor {
     return target
   }
 
+  kill ({ tracer, enemies }: {
+    tracer: Phaser.Geom.Line
+    enemies: Phaser.GameObjects.Container[]
+  }): void {
+    enemies.forEach((container) => {
+      const radius = container.width / 2
+      const circle = new Phaser.Geom.Circle(
+        container.x, container.y, radius
+      )
+
+      const intersection = this.scene.getLineToCircle({ line: tracer, circle })
+
+      if (intersection == null) {
+        return
+      }
+
+      const realPosition = { x: container.x, y: container.y }
+      const now = Date.now()
+      const time = now - this.scene.killTime
+      this.scene.killTime = now
+
+      this.scene.createWorkers({ realPosition, time })
+
+      container.destroy()
+    })
+  }
+
   update (): void {
     super.update()
 
@@ -196,39 +213,39 @@ export default class Tower extends Actor {
       ? Infinity
       : now - this.fireTime
 
-    const firing = fireDifference < 500
-    if (firing) {
-      this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
-      this.scene.strokeLine({ realA: this.fireMuzzle, realB: this.fireTarget })
-
-      this.scene.graphics.lineStyle(1, 0xFF0000, 0.1)
-      if (this.scene.pointerPosition != null) {
-        this.scene.strokeLine({
-          realA: this.realPosition, realB: this.scene.pointerPosition
-        })
-      }
-    }
+    const tracer = this.createTracer()
     const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
 
-    this.scene.graphics.fillStyle(0x0000FF)
-    const nearest = this.getNearest(mobs)
+    const firing = fireDifference < 500
+    if (firing) {
+      this.kill({ tracer, enemies: mobs })
 
-    const waiting = !firing
-    if (waiting && nearest != null) {
-      const realPosition = { x: nearest.x, y: nearest.y }
-      this.rotateTo({ realPosition })
-
-      const tracer = this.createTracer()
-      const recharged = fireDifference > this.rechargeTime
-      if (recharged) {
-        this.attack({ now, tracer, enemies: mobs })
-
-        this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
-      } else {
-        this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
-      }
-
+      this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.graphics.strokeLineShape(tracer)
+
+      this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
+      this.scene.strokeLine({
+        realA: this.realPosition, realB: this.scene.pointerPosition
+      })
+    } else {
+      this.scene.graphics.fillStyle(0x0000FF)
+      const nearest = this.getNearest(mobs)
+
+      if (nearest != null) {
+        const realPosition = { x: nearest.x, y: nearest.y }
+        this.rotateTo({ realPosition })
+
+        const recharged = fireDifference > this.rechargeTime
+        if (recharged) {
+          this.attack({ now, tracer, enemies: mobs })
+
+          this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
+        } else {
+          this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
+        }
+
+        this.scene.graphics.strokeLineShape(tracer)
+      }
     }
   }
 }
