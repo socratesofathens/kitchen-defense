@@ -16,14 +16,9 @@ export default class Mob extends Actor {
       scene, position, realPosition, radius, groups: [scene.mobs]
     })
 
-    const shape = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius, color
-    })
-    shape.setStrokeStyle(2, 0x000000)
-    this.container.add(shape)
-
-    const sprite = this.scene.add.sprite(0, 0, 'worker')
-    sprite.setDisplaySize(this.realRadius * 1.4, this.realRadius * 1.4)
+    const xOffset = this.scene.getReal(0.011)
+    const sprite = this.scene.add.sprite(xOffset, 0, 'worker')
+    sprite.setDisplaySize(this.realRadius * 1.65, this.realRadius * 1.65)
     this.container.add(sprite)
 
     if (this.container.body instanceof Phaser.Physics.Arcade.Body) {

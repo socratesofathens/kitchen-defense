@@ -290,7 +290,7 @@ export default class Scene extends Phaser.Scene {
     time?: number
   }): void {
     const mobsLength = this.mobs.getLength()
-    if (mobsLength < 1000) {
+    if (mobsLength < 500) {
       const death = this.checkRealPosition({ position, realPosition })
 
       const logTime = Math.log(time)
@@ -461,7 +461,7 @@ export default class Scene extends Phaser.Scene {
         this.open = false
 
         this.graphics.fillStyle(0xFFFF00)
-        this.fillCircle({ realPosition: this.sugar.realPosition, radius })
+        this.fillCircle({ realPosition: this.sugar.realPosition, radius: space })
       }
     }
 

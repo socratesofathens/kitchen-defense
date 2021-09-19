@@ -232,12 +232,15 @@ export default class Tower extends Actor {
 
     const firing = fireDifference < this.laserTime
     if (firing) {
-      const exponentLength = this.scene.towers.length * this.scene.towers.length
-      const fractionLength = exponentLength / 10
-      const divisorLength = fractionLength < 2
-        ? 2
-        : fractionLength
-      const batteryCost = delta / divisorLength
+      const towerRatio = this.scene.towers.length / mobs.length
+      console.log('towerRatio test:', towerRatio)
+      const ratioLog = Math.log(towerRatio + 1) / 2
+      console.log('ratioLog test:', ratioLog)
+      const fractionRatio = ratioLog > 0
+        ? ratioLog / this.scene.towers.length
+        : 0
+      console.log('fractionRatio test:', fractionRatio)
+      const batteryCost = delta * fractionRatio
       this.scene.spendBattery(batteryCost)
       this.kill({ tracer, enemies: mobs, now })
 
