@@ -272,12 +272,10 @@ export default class Scene extends Phaser.Scene {
     time?: number
   }): void {
     const mobsLength = this.mobs.getLength()
-    console.log('mobs.length test:', mobsLength)
     if (mobsLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
       const length = Math.ceil(time / 1000) + 1
-      console.log('length test:', length)
 
       const distance = Phaser.Math.Distance.Between(
         death.x, death.y, this.REAL_CENTER.x, this.REAL_CENTER.y
