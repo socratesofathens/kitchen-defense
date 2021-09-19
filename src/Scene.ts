@@ -10,12 +10,14 @@ import worker from './worker.png'
 
 export default class Scene extends Phaser.Scene {
   public actors: Actor[] = []
+  public towers: Tower[] = []
   public battery = 0
   public mobs!: Phaser.Physics.Arcade.Group
   public graphics!: Phaser.GameObjects.Graphics
   public pointerPosition!: Position
   public statics!: Phaser.Physics.Arcade.StaticGroup
   public sugar!: Sugar
+  public open = false
   public over = false
   public start = Date.now()
   public killTime = Date.now()
@@ -27,6 +29,7 @@ export default class Scene extends Phaser.Scene {
 
   private full = false
   private queen!: Mob
+  private ready = false
 
   private readonly maximum = 5000
 
@@ -53,12 +56,12 @@ export default class Scene extends Phaser.Scene {
     this.statics = this.physics.add.staticGroup()
     this.physics.add.collider(this.mobs, this.statics)
 
-    // this.setupTowers()
+    this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
       (pointer: Phaser.Input.Pointer) => {
-        if (this.full) {
+        if (this.ready) {
           const realPosition = { x: pointer.worldX, y: pointer.worldY }
 
           this.createTower({ realPosition })
@@ -258,7 +261,6 @@ export default class Scene extends Phaser.Scene {
     )
 
     const spawn = rotated
-    console.log('spawn test:', spawn)
     const worker = new Mob({ scene: this, realPosition: spawn, radius: 0.01 })
 
     return worker
@@ -345,13 +347,19 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const right = RATIO - 0.5
+    const margin = 0.25
+    const bottom = 1 - margin
+    const right = RATIO - bottom
 
-    const topLeft = { x: 0.5, y: 0.1 }
-    const topRight = { x: right, y: 0.1 }
-    const bottomLeft = { x: 0.5, y: 0.9 }
-    const bottomRight = { x: right, y: 0.9 }
-    const positions = [topLeft, topRight, bottomLeft, bottomRight]
+    const farLeft = { x: 0.5, y: 0.5 }
+    const farRight = { x: RATIO - 0.5, y: 0.5 }
+    const topLeft = { x: bottom, y: margin }
+    const topRight = { x: right, y: margin }
+    const bottomLeft = { x: bottom, y: bottom }
+    const bottomRight = { x: right, y: bottom }
+    const positions = [
+      farLeft, farRight, topLeft, topRight, bottomLeft, bottomRight
+    ]
 
     positions.forEach(position => this.createTower({ position }))
   }
@@ -399,6 +407,7 @@ export default class Scene extends Phaser.Scene {
     const horizontal = this.createRange(0.2)
     horizontal.forEach(y => this.strokeHorizontal(y))
 
+    this.open = true
     this.actors.forEach(actor => {
       actor.update()
     })
@@ -409,7 +418,9 @@ export default class Scene extends Phaser.Scene {
       this.full = true
     }
 
-    if (this.full) {
+    this.ready = this.full && this.open
+
+    if (this.ready) {
       this.graphics.fillStyle(0x00FF00, 0.5)
     } else {
       this.graphics.fillStyle(0xFF0000, 0.5)

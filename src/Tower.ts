@@ -24,7 +24,7 @@ export default class Tower extends Actor {
       scene, position, realPosition, radius: 0.01, groups: [scene.statics]
     })
 
-    this.range = 0.5
+    this.range = 0.25
     this.realRange = this.scene.getReal(this.range)
     this.fireTime = Date.now()
 
@@ -46,6 +46,8 @@ export default class Tower extends Actor {
 
     this.tempMatrix = new Phaser.GameObjects.Components.TransformMatrix()
     this.tempParentMatrix = new Phaser.GameObjects.Components.TransformMatrix()
+
+    this.scene.towers.push(this)
   }
 
   attack ({ now, tracer, enemies }: {
@@ -78,7 +80,6 @@ export default class Tower extends Actor {
     now: number
     tracer: Phaser.Geom.Line
   }): void {
-    // TODO Let lasers kill multiple units
     this.fireTime = now
 
     this.scene.spendBattery(25)
@@ -245,6 +246,23 @@ export default class Tower extends Actor {
         }
 
         this.scene.graphics.strokeLineShape(tracer)
+      }
+    }
+
+    if (this.scene.pointerPosition != null) {
+      const distance = Phaser.Math.Distance.Between(
+        this.realPosition.x,
+        this.realPosition.y,
+        this.scene.pointerPosition.x,
+        this.scene.pointerPosition.y
+      )
+
+      const realSpace = this.scene.getReal(0.2)
+      if (distance < realSpace) {
+        this.scene.open = false
+
+        this.scene.graphics.fillStyle(0xFF0000, 0.25)
+        this.scene.fillCircle({ realPosition: this.realPosition, radius: 0.02 })
       }
     }
   }
