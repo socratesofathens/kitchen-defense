@@ -33,7 +33,7 @@ export default class AcuBot extends Obstacle {
     this.container.setData('id', this.id)
 
     this.base = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius: this.radius, color: 0xFF0000
+      position: this.scene.ORIGIN, radius: this.radius, color: 0x00FF00
     })
     this.base.setStrokeStyle(3, 0x000000)
     this.container.add(this.base)
@@ -68,18 +68,17 @@ export default class AcuBot extends Obstacle {
       const killing = killDifference < 1000
       if (killing) {
         this.base.setFillStyle(0xFF0000)
-        this.base.setStrokeStyle(3, 0xFF0000)
       } else {
         this.ready = false
 
         this.base.setFillStyle(0x00FFFF)
-        this.base.setStrokeStyle(3, 0x000000)
       }
 
       const waited = killDifference > 10000
       if (waited) {
         this.ready = true
-        this.base.setFillStyle(0xFF0000)
+
+        this.base.setFillStyle(0x00FF00)
       }
     }
   }

@@ -212,8 +212,8 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
+    this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
 
     this.createBall({ x: this.SPACE * 3, y: this.SPACE * 3 })
