@@ -21,8 +21,10 @@ export default class Actor {
 
     const realDiameter = this.realRadius * 2
 
+    const id = this.scene.getId()
     this.container = this.scene.createContainer({ position, realPosition })
     this.container.setSize(realDiameter, realDiameter)
+    this.container.setData('id', id)
 
     if (groups != null) {
       groups.forEach(group => group.add(this.container))

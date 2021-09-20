@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import Static from './Static'
-import { BLOCK, HEIGHT, WIDTH } from './config'
+import { HEIGHT, WIDTH } from './config'
 import Scene from './Scene'
 import { Position, Result } from './types'
 
@@ -28,7 +28,7 @@ export default class Tower extends Static {
     const id = this.scene.getId()
     this.container.setData('id', id)
 
-    this.range = BLOCK * 2
+    this.range = this.scene.SPACE * 3
     this.realRange = this.scene.getReal(this.range)
     this.fireTime = Date.now()
 
@@ -214,7 +214,15 @@ export default class Tower extends Static {
 
       this.scene.createWorkers({ realPosition, time })
 
+      const containerId = container.getData('id')
+      this.scene.actors = this.scene.actors.filter(actor => {
+        const id = actor.container.getData('id')
+        const match = containerId === id
+
+        return !match
+      })
       container.destroy()
+      this.scene.kills = this.scene.kills + 1
     })
   }
 
@@ -295,18 +303,15 @@ export default class Tower extends Static {
 
       if (nearest != null) {
         const realPosition = { x: nearest.x, y: nearest.y }
-        this.rotateTo({ realPosition })
+        this.rotateTo({ realPosition, rate: 0.005 })
 
         const recharged = fireDifference > this.rechargeTime
         if (recharged) {
           this.attack({ now, tracer, enemies })
 
           this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
-        } else {
-          this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
+          this.scene.graphics.strokeLineShape(tracer)
         }
-
-        this.scene.graphics.strokeLineShape(tracer)
       }
     }
   }

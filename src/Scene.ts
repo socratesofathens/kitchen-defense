@@ -4,7 +4,7 @@ import AcuBot from './AcuBot'
 import Ball from './Ball'
 
 import {
-  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, TEN, FOUR, ELEVEN, MAXIMUM_DIAMETER, FIVE, EIGHT, NINE, TWELVE, THIRTEEN
+  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, MAXIMUM_DIAMETER, MAXIMUM_RADIUS
 } from './config'
 import Enemy from './Enemy'
 import Mob from './Mob'
@@ -35,8 +35,10 @@ export default class Scene extends Phaser.Scene {
   public stations!: Phaser.Physics.Arcade.StaticGroup
   public stationPositions!: Position[]
   public sugar!: Sugar
+  public counter!: Phaser.GameObjects.Text
   public towersGroup!: Phaser.Physics.Arcade.StaticGroup
   public killTime = Date.now()
+  public kills = 0
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -68,7 +70,7 @@ export default class Scene extends Phaser.Scene {
     this.soldiersGroup = this.physics.add.group()
     this.sugar = new Sugar(this)
 
-    const position = { x: 1.3, y: 0.5 }
+    const position = { x: 1.24, y: 0.5 }
     this.queen = new Soldier({ scene: this, position })
     this.createWorkers({ position: this.ORIGIN })
 
@@ -134,34 +136,18 @@ export default class Scene extends Phaser.Scene {
 
     this.acuBotsGroup = this.physics.add.group()
 
-    const start = BLOCK * 9
-    const west = BLOCK * 10
-    const east = BLOCK * 11
-
-    const top = BLOCK * 5
-    const middle = BLOCK * 6
-    const third = BLOCK * 7
-    const base = BLOCK * 8
-
-    this.createAcuBot({ x: 0, y: 0 })
-
-    this.createAcuBot({ x: start, y: top })
-    this.createAcuBot({ x: start, y: middle })
-    this.createAcuBot({ x: start, y: third })
-    this.createAcuBot({ x: start, y: base })
-
-    this.createAcuBot({ x: west, y: top })
-    this.createAcuBot({ x: west, y: middle })
-    this.createAcuBot({ x: west, y: third })
-    this.createAcuBot({ x: west, y: base })
-
-    this.createAcuBot({ x: east, y: top })
-    this.createAcuBot({ x: east, y: middle })
-    this.createAcuBot({ x: east, y: third })
-    this.createAcuBot({ x: east, y: base })
-
-    // const c = { x: east, y: BLOCK * 7 }
-    // new AcuBot({ scene: this, position: c, letter: 'c' })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 2 })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 3 })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 4 })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 5 })
+    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 6 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 7 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 8 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 9 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 10 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 11 })
+    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 12 })
 
     const onNext = (
       stationContainer: Phaser.GameObjects.GameObject,
@@ -198,24 +184,61 @@ export default class Scene extends Phaser.Scene {
     this.collider = this.physics.add.collider(
       this.stations, this.acuBotsGroup, onNext
     )
+
+    const onKill = (
+      acuBotContainer: Phaser.GameObjects.GameObject,
+      enemyContainer: any
+    ): void => {
+      const acuBot: AcuBot = acuBotContainer.getData('acuBot')
+
+      if (acuBot.ready) {
+        const enemyId = enemyContainer.getData('id')
+        this.actors = this.actors.filter(actor => {
+          const id = actor.container.getData('id')
+          const match = enemyId === id
+
+          return !match
+        })
+        enemyContainer.destroy()
+        this.kills = this.kills + 1
+
+        const realPosition = { x: enemyContainer.x, y: enemyContainer.y }
+        const time = Date.now() - this.killTime
+        this.killTime = Date.now()
+
+        this.createWorkers({ realPosition, time })
+
+        acuBot.killTime = Date.now()
+      }
+    }
+    this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
+
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
 
-    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 3 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 7 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 11 } })
+    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 3 })
+    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 7 })
+    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 11 })
 
-    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 3 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 7 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 11 } })
+    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 3 })
+    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 7 })
+    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 11 })
 
-    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 3 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 7 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 11 } })
+    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 3 })
+    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 7 })
+    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 11 })
 
-    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 3 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 7 } })
-    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 11 } })
+    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 3 })
+    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 7 })
+    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 11 })
+
+    this.createBall({ x: this.SPACE * 17, y: this.SPACE * 3 })
+
+    const corner = { x: RATIO - 0.01, y: 1 }
+    this.counter = this.createText({
+      position: corner, content: this.kills, fontSize: 0.05, color: 'red'
+    })
+    this.counter.setOrigin(1, 1)
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -256,6 +279,12 @@ export default class Scene extends Phaser.Scene {
     const acuBot = new AcuBot({ scene: this, position })
 
     return acuBot
+  }
+
+  createBall (position: Position): Ball {
+    const ball = new Ball({ scene: this, position })
+
+    return ball
   }
 
   createContainer ({ position, realPosition }: {
@@ -420,7 +449,7 @@ export default class Scene extends Phaser.Scene {
 
     if (this.towers.length > 0 && enemiesLength > 5) {
       const enemiesRatio = (enemiesLength / 2) / this.towers.length
-      const enemiesDivisor = Math.ceil(enemiesRatio)
+      const enemiesDivisor = (Math.ceil(enemiesRatio) % 10) + 1
       const enemiesRemainder = enemiesLength % enemiesDivisor
       const enemiesZero = enemiesRemainder === 0
 
@@ -446,7 +475,7 @@ export default class Scene extends Phaser.Scene {
       const death = this.checkRealPosition({ position, realPosition })
 
       const logTime = Math.log(time)
-      const fraction = 3
+      const fraction = 10
       const fractionTime = logTime > 0
         ? logTime / fraction
         : 0
@@ -526,11 +555,11 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const topLeft = { x: ELEVEN, y: THREE }
-    const topRight = { x: FOURTEEN, y: THREE }
-    const bottomLeft = { x: TEN, y: FOUR }
-    const bottomRight = { x: TEN, y: SEVEN }
-    const inside = { x: ELEVEN, y: FOUR }
+    const topLeft = { x: this.SPACE * 17, y: this.SPACE * 5 }
+    const topRight = { x: this.SPACE * 21, y: this.SPACE * 5 }
+    const bottomLeft = { x: this.SPACE * 15, y: this.SPACE * 7 }
+    const bottomRight = { x: this.SPACE * 15, y: this.SPACE * 11 }
+    const inside = { x: this.SPACE * 16, y: this.SPACE * 6 }
     const positions = [
       topLeft, topRight, bottomLeft, bottomRight, inside
     ]
@@ -555,8 +584,22 @@ export default class Scene extends Phaser.Scene {
         return !match
       })
 
+      const towerId = towerContainer.getData('id')
+      this.actors = this.actors.filter(tower => {
+        const id = tower.container.getData('id')
+        const match = towerId === id
+
+        return !match
+      })
       towerContainer.destroy()
 
+      const soldierId = soldierContainer.getData('id')
+      this.actors = this.actors.filter(tower => {
+        const id = tower.container.getData('id')
+        const match = soldierId === id
+
+        return !match
+      })
       soldierContainer.destroy()
     }
 
@@ -599,7 +642,7 @@ export default class Scene extends Phaser.Scene {
     this.strokeLine({ a, b })
   }
 
-  upOrDown ({ value, offset = BLOCK, up = false }: {
+  upOrDown ({ value, offset = MAXIMUM_RADIUS * 5, up = false }: {
     value: number
     offset?: number
     up?: boolean
@@ -661,12 +704,8 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    // console.log('delta test:', delta)
-    // console.log('sum test:', sum)
-    // console.log('quotient test:', quotient)
     const log = Math.log(this.firing)
     const quotient = log / 2
-    // console.log('ceiling test:', ceiling)
     const base = 1.5
     const added = base + quotient
 
@@ -677,7 +716,6 @@ export default class Scene extends Phaser.Scene {
       : greater
         ? added
         : 1
-    console.log('firing test:', firing)
     const charge = delta / firing
 
     this.battery = this.battery + charge
@@ -703,26 +741,59 @@ export default class Scene extends Phaser.Scene {
 
     // this.fillCircle({ realPosition: rotated, radius: 0.1 })
 
-    if (this.ready) {
-      this.graphics.fillStyle(0x00FF00, 0.5)
-    } else {
-      this.graphics.fillStyle(0xFF0000, 0.5)
-    }
-
     if (this.pointerPosition != null) {
-      const percent = this.battery / this.maximum
-      const angle = 360 * percent
-      const realRadius = this.getReal(this.SPACE)
-      this.graphics.slice(
-        this.pointerPosition.x,
-        this.pointerPosition.y,
-        realRadius,
-        Phaser.Math.DegToRad(angle),
-        Phaser.Math.DegToRad(0),
-        true
-      )
+      if (this.ready) {
+        this.graphics.lineStyle(1, 0x00FF00, 1)
+
+        const tracer = this.createLine()
+
+        const radians = Phaser.Math.Angle.Between(
+          this.pointerPosition.x,
+          this.pointerPosition.y,
+          this.sugar.realPosition.x,
+          this.sugar.realPosition.y
+        )
+
+        const realRange = this.getReal(this.SPACE * 3)
+        Phaser.Geom.Line.SetToAngle(
+          tracer,
+          this.pointerPosition.x,
+          this.pointerPosition.y,
+          radians + Math.PI,
+          realRange
+        )
+
+        this.graphics.strokeLineShape(tracer)
+
+        this.graphics.fillStyle(0x00FF00, 1)
+        this.fillCircle({ realPosition: this.pointerPosition, radius: 0.01 })
+      } else if (this.open || !this.full) {
+        this.graphics.fillStyle(0xFF0000, 0.5)
+        const percent = this.battery / this.maximum
+        const angle = 360 * percent
+        const realRadius = this.getReal(this.SPACE)
+        this.graphics.slice(
+          this.pointerPosition.x,
+          this.pointerPosition.y,
+          realRadius,
+          Phaser.Math.DegToRad(angle),
+          Phaser.Math.DegToRad(0),
+          true
+        )
+
+        this.graphics.fillPath()
+      }
     }
 
-    this.graphics.fillPath()
+    const killsString = this.kills.toString()
+    if (
+      (this.kills >= 500 && !this.over) || this.counter.style.color === 'green'
+    ) {
+      const string = `You win! ${killsString}`
+      this.counter.setText(string)
+      this.counter.setColor('green')
+    } else {
+      this.counter.setText(this.kills.toString())
+    }
   }
 }

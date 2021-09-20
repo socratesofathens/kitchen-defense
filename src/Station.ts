@@ -1,6 +1,10 @@
 import Static from './Static'
 import Scene from './Scene'
 import { Position } from './types'
+import { MAXIMUM_DIAMETER } from './config'
+
+// TODO
+// End condition
 
 export default class Station extends Static {
   constructor ({ scene, position, realPosition }: {
@@ -9,13 +13,13 @@ export default class Station extends Static {
     realPosition?: Position
   }) {
     super({
-      scene, position, realPosition, radius: 0.1
+      scene, position, realPosition, radius: MAXIMUM_DIAMETER
     })
 
     const base = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius: this.radius, color: 0x0000FF
+      position: this.scene.ORIGIN, radius: this.radius, color: 0x9932CC
     })
-    base.setStrokeStyle(5, 0x000000)
+    base.setStrokeStyle(4, 0x000000)
     this.container.add(base)
 
     this.scene.stations.add(this.container)

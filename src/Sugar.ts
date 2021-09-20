@@ -38,17 +38,19 @@ export default class Sugar extends Actor {
       sugar: Phaser.GameObjects.GameObject,
       enemy: Phaser.GameObjects.GameObject
     ): void => {
-      const newScale = this.container.scale - 0.01
-      if (newScale > 0) {
-        this.container.setScale(newScale)
-      } else {
-        this.scene.over = true
-        this.scene.createText({
-          position: this.scene.CENTER,
-          content: 'GAME OVER',
-          color: 'red',
-          fontSize: 0.25
-        })
+      if (!this.scene.over) {
+        const newScale = this.container.scale - 0.01
+        if (newScale > 0 && !this.scene.over) {
+          this.container.setScale(newScale)
+        } else {
+          this.scene.over = true
+          this.scene.createText({
+            position: this.scene.CENTER,
+            content: `GAME OVER\n${this.scene.kills} ANTS`,
+            color: 'red',
+            fontSize: 0.25
+          })
+        }
       }
 
       if (enemy instanceof Phaser.GameObjects.Container) {
@@ -62,6 +64,13 @@ export default class Sugar extends Actor {
         throw new Error('Enemy is not container')
       }
 
+      const enemyId = enemy.getData('id')
+      this.scene.actors = this.scene.actors.filter(actor => {
+        const id = actor.container.getData('id')
+        const match = enemyId === id
+
+        return !match
+      })
       enemy.destroy()
     }
 
