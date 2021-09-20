@@ -26,7 +26,7 @@ export const FOURTEEN = BLOCK * 14
 export const FIFTEEN = BLOCK * 15
 export const SIXTEEN = BLOCK * 16
 
-export const MAXIMUM_DIAMETER = BLOCK * 0.75
+export const MAXIMUM_DIAMETER = BLOCK * 0.5
 export const MAXIMUM_RADIUS = MAXIMUM_DIAMETER / 2
 
 const config = {

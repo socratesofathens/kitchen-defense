@@ -33,7 +33,7 @@ export default class AcuBot extends Obstacle {
     this.container.add(base)
 
     const label = this.scene.createText({
-      position: this.scene.ORIGIN, content: 'AcuBot'
+      position: this.scene.ORIGIN, content: 'AcuBot', fontSize: 0.0125
     })
     this.container.add(label)
 

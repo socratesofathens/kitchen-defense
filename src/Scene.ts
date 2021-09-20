@@ -4,7 +4,7 @@ import AcuBot from './AcuBot'
 import Ball from './Ball'
 
 import {
-  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, TEN, FOUR, ELEVEN, MAXIMUM_DIAMETER
+  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, TEN, FOUR, ELEVEN, MAXIMUM_DIAMETER, FIVE, EIGHT, NINE, TWELVE, THIRTEEN
 } from './config'
 import Enemy from './Enemy'
 import Mob from './Mob'
@@ -49,7 +49,7 @@ export default class Scene extends Phaser.Scene {
   private queen!: Enemy
   private ready = false
 
-  private readonly maximum = 5000
+  private readonly maximum = 3000
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -121,7 +121,13 @@ export default class Scene extends Phaser.Scene {
       x: this.upOrDown({ value: FOURTEEN }),
       y: BLOCK
     }
-    this.stationPositions = [bottomRight, bottomLeft, topLeft, topRight]
+    const topCenter = {
+      x: this.upOrDown({ value: SEVEN }),
+      y: this.upOrDown({ value: THREE })
+    }
+    this.stationPositions = [
+      bottomRight, bottomLeft, topLeft, topCenter, topRight
+    ]
     const stations = this.stationPositions.map(position => new Station({
       scene: this, position
     }))
@@ -137,6 +143,8 @@ export default class Scene extends Phaser.Scene {
     const third = BLOCK * 7
     const base = BLOCK * 8
 
+    this.createAcuBot({ x: 0, y: 0 })
+
     this.createAcuBot({ x: start, y: top })
     this.createAcuBot({ x: start, y: middle })
     this.createAcuBot({ x: start, y: third })
@@ -144,6 +152,7 @@ export default class Scene extends Phaser.Scene {
 
     this.createAcuBot({ x: west, y: top })
     this.createAcuBot({ x: west, y: middle })
+    this.createAcuBot({ x: west, y: third })
     this.createAcuBot({ x: west, y: base })
 
     this.createAcuBot({ x: east, y: top })
@@ -192,16 +201,21 @@ export default class Scene extends Phaser.Scene {
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
 
-    new Ball({ scene: this, position: { x: 0.1, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.2, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.3, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.4, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.5, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.6, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.7, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.8, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 0.9, y: 0.5 } })
-    new Ball({ scene: this, position: { x: 1, y: 0.5 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 3 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 7 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 3, y: this.SPACE * 11 } })
+
+    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 3 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 7 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 7, y: this.SPACE * 11 } })
+
+    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 3 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 7 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 11, y: this.SPACE * 11 } })
+
+    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 3 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 7 } })
+    new Ball({ scene: this, position: { x: this.SPACE * 14, y: this.SPACE * 11 } })
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -428,7 +442,7 @@ export default class Scene extends Phaser.Scene {
     time?: number
   }): void {
     const enemiesLength = this.enemies.getLength()
-    if (enemiesLength < 100) {
+    if (enemiesLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
       const logTime = Math.log(time)
@@ -604,10 +618,10 @@ export default class Scene extends Phaser.Scene {
     this.graphics.clear()
     this.firing = 0
 
-    const vertical = this.createRangeRatio(BLOCK)
+    const vertical = this.createRangeRatio(this.SPACE)
     vertical.forEach(x => this.strokeVertical(x))
 
-    const horizontal = this.createRange(BLOCK)
+    const horizontal = this.createRange(this.SPACE)
     horizontal.forEach(y => this.strokeHorizontal(y))
 
     this.open = true
