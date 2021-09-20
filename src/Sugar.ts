@@ -36,7 +36,7 @@ export default class Sugar extends Actor {
 
     const onEat = (
       sugar: Phaser.GameObjects.GameObject,
-      mob: Phaser.GameObjects.GameObject
+      enemy: Phaser.GameObjects.GameObject
     ): void => {
       const newScale = this.container.scale - 0.01
       if (newScale > 0) {
@@ -51,15 +51,22 @@ export default class Sugar extends Actor {
         })
       }
 
-      if (mob instanceof Phaser.GameObjects.Arc || mob instanceof Phaser.GameObjects.Container) {
-        const death = { x: mob.x, y: mob.y }
+      if (enemy instanceof Phaser.GameObjects.Container) {
+        const death = { x: enemy.x, y: enemy.y }
         this.scene.createWorkers({ realPosition: death })
+      } else {
+        console.warn({ enemy })
+        const type = typeof enemy
+        console.warn({ type })
+
+        throw new Error('Enemy is not container')
       }
-      mob.destroy()
+
+      enemy.destroy()
     }
 
-    this.scene.physics.add.collider(
-      this.container, this.scene.mobs, onEat
-    )
+    // TODO Why does order matter?
+    this.scene.physics.add.collider(this.container, this.scene.enemies, onEat)
+    this.scene.physics.add.collider(this.container, this.scene.mobs)
   }
 }

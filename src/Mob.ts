@@ -3,26 +3,28 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Mob extends Actor {
-  private readonly speed = 0.0001
+  public target: Position
+  public speed: number
 
-  constructor ({ scene, position, realPosition, radius, color = 0xFFFFFF }: {
+  constructor ({
+    scene, position, realPosition, radius, target, speed = 0.0001
+  }: {
     scene: Scene
     position?: Position
     realPosition?: Position
     radius: number
-    color?: number
+    target: Position
+    speed?: number
   }) {
     super({
       scene, position, realPosition, radius, groups: [scene.mobs]
     })
 
-    const xOffset = this.scene.getReal(0.011)
-    const sprite = this.scene.add.sprite(xOffset, 0, 'worker')
-    sprite.setDisplaySize(this.realRadius * 1.65, this.realRadius * 1.65)
-    this.container.add(sprite)
+    this.target = target
+    this.speed = speed
 
     if (this.container.body instanceof Phaser.Physics.Arcade.Body) {
-      this.container.body.setBounce(10, 10)
+      this.container.body.setBounce(1, 1)
     }
   }
 
@@ -69,7 +71,7 @@ export default class Mob extends Actor {
   }): void {
     super.update({ now, delta })
 
-    this.rotateTo({ realPosition: this.scene.sugar.realPosition, rate: 0.01 })
+    this.rotateTo({ realPosition: this.target, rate: 0.01 })
 
     this.walk()
   }

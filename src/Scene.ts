@@ -1,8 +1,14 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
+import AcuBot from './AcuBot'
 
-import { HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, WIDTH } from './config'
+import {
+  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, TEN, FOUR, ELEVEN, MAXIMUM_DIAMETER
+} from './config'
+import Enemy from './Enemy'
 import Mob from './Mob'
+import Soldier from './Soldier'
+import Station from './Station'
 import Sugar from './Sugar'
 import Tower from './Tower'
 import { Position, Size } from './types'
@@ -11,28 +17,38 @@ import worker from './worker.png'
 export default class Scene extends Phaser.Scene {
   public actors: Actor[] = []
   public towers: Tower[] = []
+  public acuBots: AcuBot[] = []
+  public acuBotsGroup!: Phaser.Physics.Arcade.Group
   public battery = 0
-  public mobs!: Phaser.Physics.Arcade.Group
+  public collider!: Phaser.Physics.Arcade.Collider
+  public enemies!: Phaser.Physics.Arcade.Group
+  public firing = 1
   public graphics!: Phaser.GameObjects.Graphics
-  public pointerPosition!: Position
-  public statics!: Phaser.Physics.Arcade.StaticGroup
-  public sugar!: Sugar
+  public mobs!: Phaser.Physics.Arcade.Group
   public open = false
   public over = false
+  public pointerPosition!: Position
+  public soldiersGroup!: Phaser.Physics.Arcade.Group
   public start = Date.now()
+  public statics!: Phaser.Physics.Arcade.StaticGroup
+  public stations!: Phaser.Physics.Arcade.StaticGroup
+  public stationPositions!: Position[]
+  public sugar!: Sugar
+  public towersGroup!: Phaser.Physics.Arcade.StaticGroup
   public killTime = Date.now()
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
-  public readonly SPACE: number = 0.1
+  public readonly SPACE: number = MAXIMUM_DIAMETER + 0.02
 
   protected REAL_CENTER!: Position
 
   private full = false
-  private queen!: Mob
+  private id = 0
+  private queen!: Enemy
   private ready = false
 
-  private readonly maximum = 5000
+  private readonly maximum = 10000
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -47,15 +63,16 @@ export default class Scene extends Phaser.Scene {
     this.REAL_CENTER = this.getRealPosition(this.CENTER)
 
     this.mobs = this.physics.add.group()
-    const position = { x: 0.1, y: 0.1 }
-    this.queen = new Mob({ scene: this, position, radius: 0.05 })
+    this.enemies = this.physics.add.group()
+    this.soldiersGroup = this.physics.add.group()
     this.sugar = new Sugar(this)
+
+    const position = { x: 1.3, y: 0.5 }
+    this.queen = new Soldier({ scene: this, position })
     this.createWorkers({ position: this.ORIGIN })
 
-    this.physics.add.collider(this.mobs, this.mobs)
-
     this.statics = this.physics.add.staticGroup()
-    this.physics.add.collider(this.mobs, this.statics)
+    this.towersGroup = this.physics.add.staticGroup()
 
     this.setupTowers()
 
@@ -84,6 +101,95 @@ export default class Scene extends Phaser.Scene {
       this.input.off(Phaser.Input.Events.POINTER_UP)
       this.input.off(Phaser.Input.Events.POINTER_MOVE)
     })
+
+    this.stations = this.physics.add.staticGroup()
+
+    const topLeft = {
+      x: this.upOrDown({ value: TWO }),
+      y: this.upOrDown({ value: TWO })
+    }
+    const bottomLeft = {
+      x: this.upOrDown({ value: BLOCK, up: true }),
+      y: this.upOrDown({ value: SEVEN })
+    }
+    const bottomRight = {
+      x: this.upOrDown({ value: SIX }),
+      y: this.upOrDown({ value: SEVEN })
+    }
+    const topRight = {
+      x: this.upOrDown({ value: FOURTEEN }),
+      y: BLOCK
+    }
+    this.stationPositions = [bottomRight, bottomLeft, topLeft, topRight]
+    const stations = this.stationPositions.map(position => new Station({
+      scene: this, position
+    }))
+
+    this.acuBotsGroup = this.physics.add.group()
+
+    const start = BLOCK * 9
+    const west = BLOCK * 10
+    const east = BLOCK * 11
+
+    const top = BLOCK * 5
+    const middle = BLOCK * 6
+    const third = BLOCK * 7
+    const base = BLOCK * 8
+
+    this.createAcuBot({ x: start, y: top })
+    this.createAcuBot({ x: start, y: middle })
+    this.createAcuBot({ x: start, y: third })
+    this.createAcuBot({ x: start, y: base })
+
+    this.createAcuBot({ x: west, y: top })
+    this.createAcuBot({ x: west, y: middle })
+    this.createAcuBot({ x: west, y: base })
+
+    this.createAcuBot({ x: east, y: top })
+    this.createAcuBot({ x: east, y: middle })
+    this.createAcuBot({ x: east, y: third })
+    this.createAcuBot({ x: east, y: base })
+
+    // const c = { x: east, y: BLOCK * 7 }
+    // new AcuBot({ scene: this, position: c, letter: 'c' })
+
+    const onNext = (
+      stationContainer: Phaser.GameObjects.GameObject,
+      botContainer: Phaser.GameObjects.GameObject
+    ): void => {
+      const last = botContainer.getData('last')
+      if (stationContainer.body.position === last) {
+        return
+      } else {
+        botContainer.setData('last', stationContainer.body.position)
+      }
+
+      const id = botContainer.getData('id')
+
+      const bot = this.acuBots.find(bot => {
+        const botId = bot.container.getData('id')
+        const match = botId === id
+
+        return match
+      })
+
+      if (bot == null) {
+        throw new Error('Letter not found')
+      }
+
+      const next = bot.index + 1
+      const end = stations.length
+      bot.index = next % end
+      const station = stations[bot.index]
+
+      bot.target = station.getRealPosition()
+    }
+
+    this.collider = this.physics.add.collider(
+      this.stations, this.acuBotsGroup, onNext
+    )
+    this.physics.add.collider(this.mobs, this.mobs)
+    this.physics.add.collider(this.mobs, this.statics)
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -118,6 +224,12 @@ export default class Scene extends Phaser.Scene {
     return this.checkReal({
       value: position, real: realPosition, getter: this.getRealPosition
     })
+  }
+
+  createAcuBot (position: Position): AcuBot {
+    const acuBot = new AcuBot({ scene: this, position })
+
+    return acuBot
   }
 
   createContainer ({ position, realPosition }: {
@@ -241,10 +353,10 @@ export default class Scene extends Phaser.Scene {
     return tower
   }
 
-  createWorker ({ death = this.ORIGIN, time, mobsLength, distance }: {
+  createWorker ({ death = this.ORIGIN, time, enemiesLength, distance }: {
     death?: Position
     time?: number
-    mobsLength: number
+    enemiesLength: number
     distance: number
   }): Mob {
     const currentRadians = Phaser.Math.Angle.Between(
@@ -263,11 +375,11 @@ export default class Scene extends Phaser.Scene {
     const newDegrees = absoluteDegrees - 30
     const radians = Phaser.Math.DegToRad(newDegrees)
 
-    const mobsLog = mobsLength > 0
-      ? Math.log(mobsLength)
+    const enemiesLog = enemiesLength > 0
+      ? Math.log(enemiesLength)
       : 0
 
-    const newDistance = WIDTH + ((WIDTH / 10) * mobsLog)
+    const newDistance = WIDTH + ((WIDTH / 10) * enemiesLog)
 
     const base = { x: 0, y: HALF_HEIGHT }
     const rotated = Phaser.Math.RotateAroundDistance(
@@ -279,7 +391,21 @@ export default class Scene extends Phaser.Scene {
     )
 
     const spawn = rotated
-    const worker = new Mob({ scene: this, realPosition: spawn, radius: 0.01 })
+
+    if (this.towers.length > 0 && enemiesLength > 5) {
+      const enemiesRatio = (enemiesLength / 2) / this.towers.length
+      const enemiesDivisor = Math.ceil(enemiesRatio)
+      const enemiesRemainder = enemiesLength % enemiesDivisor
+      const enemiesZero = enemiesRemainder === 0
+
+      if (enemiesZero) {
+        const soldier = new Soldier({ scene: this, realPosition: spawn })
+
+        return soldier
+      }
+    }
+
+    const worker = new Enemy({ scene: this, realPosition: spawn, radius: 0.01 })
 
     return worker
   }
@@ -289,8 +415,8 @@ export default class Scene extends Phaser.Scene {
     realPosition?: Position
     time?: number
   }): void {
-    const mobsLength = this.mobs.getLength()
-    if (mobsLength < 500) {
+    const enemiesLength = this.enemies.getLength()
+    if (enemiesLength < 100) {
       const death = this.checkRealPosition({ position, realPosition })
 
       const logTime = Math.log(time)
@@ -307,15 +433,15 @@ export default class Scene extends Phaser.Scene {
       Array.from(
         { length },
         (_, index) => this.createWorker({
-          death, time, mobsLength: mobsLength + index, distance
+          death, time, enemiesLength: enemiesLength + index, distance
         })
       )
     } else {
-      console.warn('Too many mobile objects')
+      console.warn('Too many enemies')
     }
   }
 
-  fillCircle ({ position, radius, realPosition, realRadius }: {
+  fillCircle ({ position, radius = 0.1, realPosition, realRadius }: {
     position?: Position
     realPosition?: Position
     radius?: number
@@ -325,6 +451,12 @@ export default class Scene extends Phaser.Scene {
     realRadius = this.checkRealNumber({ value: radius, real: realRadius })
 
     this.graphics.fillCircle(realPosition.x, realPosition.y, realRadius)
+  }
+
+  getId (): number {
+    this.id = this.id + 1
+
+    return this.id
   }
 
   getLineToCircle ({ line, circle }: {
@@ -368,21 +500,43 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const margin = 0.25
-    const bottom = 1 - margin
-    const right = RATIO - bottom
-
-    const farLeft = { x: 0.5, y: 0.5 }
-    const farRight = { x: RATIO - 0.5, y: 0.5 }
-    const topLeft = { x: bottom, y: margin }
-    const topRight = { x: right, y: margin }
-    const bottomLeft = { x: bottom, y: bottom }
-    const bottomRight = { x: right, y: bottom }
+    const topLeft = { x: ELEVEN, y: THREE }
+    const topRight = { x: FOURTEEN, y: THREE }
+    const bottomLeft = { x: TEN, y: FOUR }
+    const bottomRight = { x: TEN, y: SEVEN }
+    const inside = { x: ELEVEN, y: FOUR }
     const positions = [
-      farLeft, farRight, topLeft, topRight, bottomLeft, bottomRight
+      topLeft, topRight, bottomLeft, bottomRight, inside
     ]
 
     positions.forEach(position => this.createTower({ position }))
+
+    const onBite = (
+      towerContainer: Phaser.GameObjects.GameObject,
+      soldierContainer: Phaser.GameObjects.GameObject
+    ): void => {
+      const towerContainerId = towerContainer.getData('id')
+      this.towers = this.towers.filter(tower => {
+        const id = tower.container.getData('id')
+        const match = towerContainerId === id
+
+        return !match
+      })
+      this.actors = this.actors.filter(tower => {
+        const id = tower.container.getData('id')
+        const match = towerContainerId === id
+
+        return !match
+      })
+
+      towerContainer.destroy()
+
+      soldierContainer.destroy()
+    }
+
+    this.collider = this.physics.add.collider(
+      this.towersGroup, this.soldiersGroup, onBite
+    )
   }
 
   spendBattery (value: number): void {
@@ -419,13 +573,29 @@ export default class Scene extends Phaser.Scene {
     this.strokeLine({ a, b })
   }
 
+  upOrDown ({ value, offset = BLOCK, up = false }: {
+    value: number
+    offset?: number
+    up?: boolean
+  }): number {
+    const random = Math.random() * offset
+    const positive = up || Math.random() > 0.5
+
+    if (positive) {
+      return value + random
+    } else {
+      return value - random
+    }
+  }
+
   update (now: number, delta: number): void {
     this.graphics.clear()
+    this.firing = 2
 
-    const vertical = this.createRangeRatio(0.2)
+    const vertical = this.createRangeRatio(BLOCK)
     vertical.forEach(x => this.strokeVertical(x))
 
-    const horizontal = this.createRange(0.2)
+    const horizontal = this.createRange(BLOCK)
     horizontal.forEach(y => this.strokeHorizontal(y))
 
     this.open = true
@@ -454,7 +624,7 @@ export default class Scene extends Phaser.Scene {
         this.pointerPosition.y
       )
 
-      const radius = this.sugar.radius + 0.05
+      const radius = this.sugar.radius + this.SPACE
       const space = this.sugar.container.scale * radius
       const realSpace = this.getReal(space)
       if (distance < realSpace) {
@@ -465,7 +635,9 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    this.battery = this.battery + delta
+    const firingLog = Math.log(this.firing)
+    const charge = delta / firingLog
+    this.battery = this.battery + charge
     if (this.battery > this.maximum) {
       this.battery = this.maximum
       this.full = true

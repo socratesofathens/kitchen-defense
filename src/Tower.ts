@@ -1,10 +1,10 @@
 import Phaser from 'phaser'
-import Actor from './Actor'
-import { HEIGHT, WIDTH } from './config'
+import Static from './Static'
+import { BLOCK, HEIGHT, WIDTH } from './config'
 import Scene from './Scene'
 import { Position, Result } from './types'
 
-export default class Tower extends Actor {
+export default class Tower extends Static {
   private fireTime!: number
   private unfired = true
 
@@ -12,8 +12,7 @@ export default class Tower extends Actor {
   private readonly muzzle!: Phaser.GameObjects.Arc
   private readonly range!: number
   private readonly realRange!: number
-  private readonly realPosition!: Position
-  private readonly rechargeTime = 1000
+  private readonly rechargeTime = 10000
   private readonly tempMatrix!: Phaser.GameObjects.Components.TransformMatrix
   private readonly tempParentMatrix!: Phaser.GameObjects.Components.TransformMatrix
 
@@ -23,12 +22,13 @@ export default class Tower extends Actor {
     realPosition?: Position
   }) {
     super({
-      scene, position, realPosition, radius: 0.01, groups: [scene.statics]
+      scene, position, realPosition, radius: 0.01
     })
 
-    this.realPosition = this.getRealPosition()
+    const id = this.scene.getId()
+    this.container.setData('id', id)
 
-    this.range = 0.25
+    this.range = BLOCK * 2
     this.realRange = this.scene.getReal(this.range)
     this.fireTime = Date.now()
 
@@ -54,6 +54,7 @@ export default class Tower extends Actor {
     this.rotateToFullyBack({ realPosition: this.scene.sugar.realPosition })
 
     this.scene.towers.push(this)
+    this.scene.towersGroup.add(this.container)
   }
 
   attack ({ now, tracer, enemies }: {
@@ -223,59 +224,34 @@ export default class Tower extends Actor {
   }): void {
     super.update({ now, delta })
 
+    if (this.scene.pointerPosition != null) {
+      const distance = Phaser.Math.Distance.Between(
+        this.realPosition.x,
+        this.realPosition.y,
+        this.scene.pointerPosition.x,
+        this.scene.pointerPosition.y
+      )
+
+      const realSpace = this.scene.getReal(this.scene.SPACE)
+      if (distance < realSpace) {
+        this.scene.open = false
+
+        this.scene.graphics.fillStyle(0xFFFF00)
+        this.scene.fillCircle({
+          realPosition: this.realPosition, radius: this.scene.SPACE
+        })
+      }
+    }
+
     const fireDifference = this.unfired
       ? Infinity
       : now - this.fireTime
 
     const tracer = this.createTracer()
-    const mobs = this.scene.mobs.getChildren() as Phaser.GameObjects.Container[]
-
-    const firing = fireDifference < this.laserTime
-    if (firing) {
-      const towerRatio = this.scene.towers.length / mobs.length
-      console.log('towerRatio test:', towerRatio)
-      const ratioLog = Math.log(towerRatio + 1) / 2
-      console.log('ratioLog test:', ratioLog)
-      const fractionRatio = ratioLog > 0
-        ? ratioLog / this.scene.towers.length
-        : 0
-      console.log('fractionRatio test:', fractionRatio)
-      const batteryCost = delta * fractionRatio
-      this.scene.spendBattery(batteryCost)
-      this.kill({ tracer, enemies: mobs, now })
-
-      this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
-      this.scene.graphics.strokeLineShape(tracer)
-
-      this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
-      if (this.realPosition == null) {
-        throw new Error('Tower has no real position')
-      }
-      if (this.scene.pointerPosition != null) {
-        this.scene.strokeLine({
-          realA: this.realPosition, realB: this.scene.pointerPosition
-        })
-      }
-    } else {
-      this.scene.graphics.fillStyle(0x0000FF)
-      const nearest = this.getNearest(mobs)
-
-      if (nearest != null) {
-        const realPosition = { x: nearest.x, y: nearest.y }
-        this.rotateTo({ realPosition })
-
-        const recharged = fireDifference > this.rechargeTime
-        if (recharged) {
-          this.attack({ now, tracer, enemies: mobs })
-
-          this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
-        } else {
-          this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
-        }
-
-        this.scene.graphics.strokeLineShape(tracer)
-      }
-    }
+    const enemies = this
+      .scene
+      .enemies
+      .getChildren() as Phaser.GameObjects.Container[]
 
     if (this.scene.pointerPosition != null) {
       const distance = Phaser.Math.Distance.Between(
@@ -293,6 +269,44 @@ export default class Tower extends Actor {
         this.scene.fillCircle({
           realPosition: this.realPosition, radius: this.scene.SPACE
         })
+      }
+    }
+
+    const firing = fireDifference < this.laserTime
+    if (firing) {
+      this.scene.firing = this.scene.firing + 1
+      this.kill({ tracer, enemies, now })
+
+      this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
+      this.scene.graphics.strokeLineShape(tracer)
+
+      this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
+      if (this.realPosition == null) {
+        throw new Error('Tower has no real position')
+      }
+      if (this.scene.pointerPosition != null) {
+        this.scene.strokeLine({
+          realA: this.realPosition, realB: this.scene.pointerPosition
+        })
+      }
+    } else {
+      this.scene.graphics.fillStyle(0x0000FF)
+      const nearest = this.getNearest(enemies)
+
+      if (nearest != null) {
+        const realPosition = { x: nearest.x, y: nearest.y }
+        this.rotateTo({ realPosition })
+
+        const recharged = fireDifference > this.rechargeTime
+        if (recharged) {
+          this.attack({ now, tracer, enemies })
+
+          this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
+        } else {
+          this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
+        }
+
+        this.scene.graphics.strokeLineShape(tracer)
       }
     }
   }
