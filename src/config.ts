@@ -31,10 +31,16 @@ export const MAXIMUM_RADIUS = MAXIMUM_DIAMETER / 2
 
 const config = {
   type: Phaser.CANVAS,
-  width: 1600,
-  height: 900,
+  width: '100%',
+  height: '100%',
   physics: {
     default: 'arcade'
+  },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    height: 900,
+    width: 1600,
+    autoCenter: Phaser.Scale.CENTER_BOTH
   },
   scene: Scene
 }

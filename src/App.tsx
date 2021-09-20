@@ -9,7 +9,7 @@ export default function App (): JSX.Element {
     <>
       <GlobalStyle />
 
-      <IonPhaser game={config} initialize />
+      <IonPhaser game={config} id='ion-phaser' />
     </>
   )
 }

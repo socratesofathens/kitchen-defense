@@ -77,7 +77,7 @@ export default class Scene extends Phaser.Scene {
     this.statics = this.physics.add.staticGroup()
     this.towersGroup = this.physics.add.staticGroup()
 
-    this.setupTowers()
+    // this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -212,9 +212,9 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
+    this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
 
     this.createBall({ x: this.SPACE * 3, y: this.SPACE * 3 })
     this.createBall({ x: this.SPACE * 3, y: this.SPACE * 7 })
@@ -239,6 +239,8 @@ export default class Scene extends Phaser.Scene {
       position: corner, content: this.kills, fontSize: 0.05, color: 'red'
     })
     this.counter.setOrigin(1, 1)
+
+    this.scale.refresh()
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -785,7 +787,7 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    const killsString = this.kills.toString()
+    const killsString = `${this.kills} / 500`
     if (
       (this.kills >= 500 && !this.over) || this.counter.style.color === 'green'
     ) {
@@ -793,7 +795,7 @@ export default class Scene extends Phaser.Scene {
       this.counter.setText(string)
       this.counter.setColor('green')
     } else {
-      this.counter.setText(this.kills.toString())
+      this.counter.setText(killsString)
     }
   }
 }
