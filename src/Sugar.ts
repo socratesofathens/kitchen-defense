@@ -74,7 +74,6 @@ export default class Sugar extends Actor {
       enemy.destroy()
     }
 
-    // TODO Why does order matter?
     this.scene.physics.add.collider(this.container, this.scene.enemies, onEat)
     this.scene.physics.add.collider(this.container, this.scene.mobs)
   }

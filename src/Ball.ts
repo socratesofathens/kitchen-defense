@@ -4,14 +4,16 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Ball extends Mob {
-  constructor ({ scene, position }: {
+  constructor ({ scene, position, scale = 1 }: {
     scene: Scene
     position: Position
+    scale: number
   }) {
+    const radius = MAXIMUM_RADIUS * scale
     super({
       scene,
       position,
-      radius: MAXIMUM_RADIUS,
+      radius,
       target: scene.ORIGIN,
       speed: 0
     })
@@ -25,6 +27,14 @@ export default class Ball extends Mob {
     })
     base.setStrokeStyle(3, 0x000000)
     this.container.add(base)
+
+    const fontSize = 0.0125 * scale
+    const label = this.scene.createText({
+      position: this.scene.ORIGIN, content: 'Debris', fontSize
+    })
+    this.container.add(label)
+
+    label.rotation = label.rotation + Math.PI
   }
 
   update ({ now, delta }: {

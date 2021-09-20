@@ -22,8 +22,10 @@ export default class AcuBot extends Obstacle {
       scene,
       position,
       target,
-      speed: 0.00025
+      speed: 0.00033
     })
+
+    this.rotateToFully({ realPosition: target })
 
     this.ready = true
     this.killTime = 0

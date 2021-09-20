@@ -7,7 +7,7 @@ export default class Mob extends Actor {
   public speed: number
 
   constructor ({
-    scene, position, realPosition, radius, target, speed = 0.0001
+    scene, position, realPosition, radius, target, speed = 0.00015
   }: {
     scene: Scene
     position?: Position

@@ -3,9 +3,6 @@ import Scene from './Scene'
 import { Position } from './types'
 import { MAXIMUM_DIAMETER } from './config'
 
-// TODO
-// End condition
-
 export default class Station extends Static {
   constructor ({ scene, position, realPosition }: {
     scene: Scene
@@ -13,14 +10,19 @@ export default class Station extends Static {
     realPosition?: Position
   }) {
     super({
-      scene, position, realPosition, radius: MAXIMUM_DIAMETER
+      scene, position, realPosition, radius: 0.075
     })
 
     const base = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius: this.radius, color: 0x9932CC
+      position: this.scene.ORIGIN, radius: this.radius, color: 0x00FF00
     })
     base.setStrokeStyle(4, 0x000000)
     this.container.add(base)
+
+    const label = this.scene.createText({
+      position: this.scene.ORIGIN, content: 'AcuStation', fontSize: 0.0175, color: 'black'
+    })
+    this.container.add(label)
 
     this.scene.stations.add(this.container)
   }

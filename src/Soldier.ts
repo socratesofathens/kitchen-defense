@@ -5,7 +5,7 @@ import { Position, Result } from './types'
 
 export default class Soldier extends Enemy {
   constructor ({
-    scene, position, realPosition, radius = 0.015, speed = 0.00005
+    scene, position, realPosition, radius = 0.015, speed = 0.0001
   }: {
     scene: Scene
     position?: Position
@@ -27,7 +27,6 @@ export default class Soldier extends Enemy {
     shape.setStrokeStyle(2, 0xFF0000)
     this.container.add(shape)
 
-    this.scene.enemies.add(this.container)
     this.scene.soldiersGroup.add(this.container)
   }
 

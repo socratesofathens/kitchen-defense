@@ -4,7 +4,7 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Obstacle extends Mob {
-  constructor ({ scene, position, target, speed }: {
+  constructor ({ scene, position, target, speed = 0.00025 }: {
     scene: Scene
     position: Position
     target: Position
@@ -15,7 +15,7 @@ export default class Obstacle extends Mob {
       position,
       radius: MAXIMUM_RADIUS,
       target,
-      speed: 0.00025
+      speed
     })
   }
 

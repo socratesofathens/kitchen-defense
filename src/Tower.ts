@@ -280,6 +280,14 @@ export default class Tower extends Static {
       }
     }
 
+    this.scene.graphics.fillStyle(0x0000FF)
+    const nearest = this.getNearest(enemies)
+
+    if (nearest != null) {
+      const realPosition = { x: nearest.x, y: nearest.y }
+      this.rotateTo({ realPosition, rate: 0.005 })
+    }
+
     const firing = fireDifference < this.laserTime
     if (firing) {
       this.scene.firing = this.scene.firing + 1
@@ -297,22 +305,17 @@ export default class Tower extends Static {
           realA: this.realPosition, realB: this.scene.pointerPosition
         })
       }
-    } else {
-      this.scene.graphics.fillStyle(0x0000FF)
-      const nearest = this.getNearest(enemies)
+    } else if (nearest != null) {
+      const recharged = fireDifference > this.rechargeTime
+      if (recharged) {
+        this.attack({ now, tracer, enemies })
 
-      if (nearest != null) {
-        const realPosition = { x: nearest.x, y: nearest.y }
-        this.rotateTo({ realPosition, rate: 0.005 })
-
-        const recharged = fireDifference > this.rechargeTime
-        if (recharged) {
-          this.attack({ now, tracer, enemies })
-
-          this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
-          this.scene.graphics.strokeLineShape(tracer)
-        }
+        this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
+      } else {
+        this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
       }
+
+      this.scene.graphics.strokeLineShape(tracer)
     }
   }
 }

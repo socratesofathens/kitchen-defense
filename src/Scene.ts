@@ -70,14 +70,14 @@ export default class Scene extends Phaser.Scene {
     this.soldiersGroup = this.physics.add.group()
     this.sugar = new Sugar(this)
 
-    const position = { x: 1.24, y: 0.5 }
+    const position = { x: 1.45, y: 0.40 }
     this.queen = new Soldier({ scene: this, position })
     this.createWorkers({ position: this.ORIGIN })
 
     this.statics = this.physics.add.staticGroup()
     this.towersGroup = this.physics.add.staticGroup()
 
-    // this.setupTowers()
+    this.setupTowers()
 
     this.input.on(
       Phaser.Input.Events.POINTER_UP,
@@ -136,18 +136,26 @@ export default class Scene extends Phaser.Scene {
 
     this.acuBotsGroup = this.physics.add.group()
 
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE })
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 2 })
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 3 })
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 4 })
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 5 })
-    this.createAcuBot({ x: this.SPACE, y: this.SPACE * 6 })
     this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 7 })
     this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 8 })
     this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 9 })
     this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 10 })
     this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 11 })
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 12 })
+    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 7 })
+    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 8 })
+    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 9 })
+    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 10 })
+    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 11 })
+    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 7 })
+    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 8 })
+    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 9 })
+    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 10 })
+    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 11 })
+    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 7 })
+    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 8 })
+    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 9 })
+    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 10 })
+    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 11 })
 
     const onNext = (
       stationContainer: Phaser.GameObjects.GameObject,
@@ -172,6 +180,8 @@ export default class Scene extends Phaser.Scene {
       if (bot == null) {
         throw new Error('Letter not found')
       }
+
+      bot.killTime = 1
 
       const next = bot.index + 1
       const end = stations.length
@@ -212,27 +222,16 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
+    this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
-    this.physics.add.collider(this.acuBotsGroup, this.enemies, onKill)
 
-    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 3 })
-    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 7 })
-    this.createBall({ x: this.SPACE * 3, y: this.SPACE * 11 })
-
-    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 3 })
-    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 7 })
-    this.createBall({ x: this.SPACE * 7, y: this.SPACE * 11 })
-
-    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 3 })
-    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 7 })
-    this.createBall({ x: this.SPACE * 11, y: this.SPACE * 11 })
-
-    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 3 })
-    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 7 })
-    this.createBall({ x: this.SPACE * 14, y: this.SPACE * 11 })
-
-    this.createBall({ x: this.SPACE * 17, y: this.SPACE * 3 })
+    this.createBallColumn(2)
+    this.createBallColumn(5)
+    this.createBallColumn(8)
+    this.createBallColumn(11)
+    this.createBallColumn(14)
+    this.createBallColumn(17)
 
     const corner = { x: RATIO - 0.01, y: 1 }
     this.counter = this.createText({
@@ -284,9 +283,23 @@ export default class Scene extends Phaser.Scene {
   }
 
   createBall (position: Position): Ball {
-    const ball = new Ball({ scene: this, position })
+    const spacePosition = {
+      x: this.SPACE * position.x,
+      y: this.SPACE * position.y
+    }
+    const random = Math.random() * 0.5
+    const scale = 0.5 + random
+    const ball = new Ball({ scene: this, position: spacePosition, scale })
 
     return ball
+  }
+
+  createBallColumn (x: number): void {
+    this.createBall({ x, y: 2 })
+    this.createBall({ x, y: 5 })
+    this.createBall({ x, y: 8 })
+    this.createBall({ x, y: 11 })
+    this.createBall({ x, y: 14 })
   }
 
   createContainer ({ position, realPosition }: {
@@ -415,7 +428,7 @@ export default class Scene extends Phaser.Scene {
     time?: number
     enemiesLength: number
     distance: number
-  }): Mob {
+  }): Mob | Soldier | Enemy {
     const currentRadians = Phaser.Math.Angle.Between(
       death.x, death.y, this.sugar.realPosition.x, this.sugar.realPosition.y
     )
@@ -557,11 +570,11 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const topLeft = { x: this.SPACE * 17, y: this.SPACE * 5 }
-    const topRight = { x: this.SPACE * 21, y: this.SPACE * 5 }
-    const bottomLeft = { x: this.SPACE * 15, y: this.SPACE * 7 }
-    const bottomRight = { x: this.SPACE * 15, y: this.SPACE * 11 }
-    const inside = { x: this.SPACE * 16, y: this.SPACE * 6 }
+    const topLeft = { x: this.SPACE * 21, y: this.SPACE * 6 }
+    const topRight = { x: this.SPACE * 25, y: this.SPACE * 6 }
+    const bottomLeft = { x: this.SPACE * 19, y: this.SPACE * 8 }
+    const bottomRight = { x: this.SPACE * 19, y: this.SPACE * 12 }
+    const inside = { x: this.SPACE * 20, y: this.SPACE * 7 }
     const positions = [
       topLeft, topRight, bottomLeft, bottomRight, inside
     ]
@@ -728,21 +741,6 @@ export default class Scene extends Phaser.Scene {
 
     this.ready = this.full && this.open
 
-    // this.graphics.fillStyle(0x00FFFF, 1)
-    // this.fillCircle({ realPosition: this.sugar.realPosition, radius: 0.3 })
-
-    // this.graphics.fillStyle(0xFF00FF, 1)
-    // const fake = { x: 0, y: HEIGHT }
-    // this.fillCircle({ realPosition: fake, radius: 0.3 })
-
-    // this.graphics.fillStyle(0x0000FF, 1)
-    // const radians = Phaser.Math.DegToRad(120)
-    // const rotated = Phaser.Math.RotateAroundDistance(
-    //   fake, this.sugar.realPosition.x, this.sugar.realPosition.y, radians, 400
-    // )
-
-    // this.fillCircle({ realPosition: rotated, radius: 0.1 })
-
     if (this.pointerPosition != null) {
       if (this.ready) {
         this.graphics.lineStyle(1, 0x00FF00, 1)
@@ -787,7 +785,7 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    const killsString = `${this.kills} / 500`
+    const killsString = `${this.kills} / 500 Ants`
     if (
       (this.kills >= 500 && !this.over) || this.counter.style.color === 'green'
     ) {
