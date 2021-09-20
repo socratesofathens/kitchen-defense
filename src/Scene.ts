@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import Actor from './Actor'
 import AcuBot from './AcuBot'
+import Ball from './Ball'
 
 import {
   BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, TEN, FOUR, ELEVEN, MAXIMUM_DIAMETER
@@ -48,7 +49,7 @@ export default class Scene extends Phaser.Scene {
   private queen!: Enemy
   private ready = false
 
-  private readonly maximum = 10000
+  private readonly maximum = 5000
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -190,6 +191,17 @@ export default class Scene extends Phaser.Scene {
     )
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
+
+    new Ball({ scene: this, position: { x: 0.1, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.2, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.3, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.4, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.5, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.6, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.7, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.8, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 0.9, y: 0.5 } })
+    new Ball({ scene: this, position: { x: 1, y: 0.5 } })
   }
 
   checkReal <T> ({ value, real, getter }: {
@@ -590,7 +602,7 @@ export default class Scene extends Phaser.Scene {
 
   update (now: number, delta: number): void {
     this.graphics.clear()
-    this.firing = 2
+    this.firing = 0
 
     const vertical = this.createRangeRatio(BLOCK)
     vertical.forEach(x => this.strokeVertical(x))
@@ -635,8 +647,25 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    const firingLog = Math.log(this.firing)
-    const charge = delta / firingLog
+    // console.log('delta test:', delta)
+    // console.log('sum test:', sum)
+    // console.log('quotient test:', quotient)
+    const log = Math.log(this.firing)
+    const quotient = log / 2
+    // console.log('ceiling test:', ceiling)
+    const base = 1.5
+    const added = base + quotient
+
+    const equal = this.firing === 1
+    const greater = this.firing > 1
+    const firing = equal
+      ? base
+      : greater
+        ? added
+        : 1
+    console.log('firing test:', firing)
+    const charge = delta / firing
+
     this.battery = this.battery + charge
     if (this.battery > this.maximum) {
       this.battery = this.maximum

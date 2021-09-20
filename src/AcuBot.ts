@@ -1,9 +1,8 @@
-import { MAXIMUM_RADIUS } from './config'
-import Mob from './Mob'
+import Obstacle from './Obstacle'
 import Scene from './Scene'
 import { Position } from './types'
 
-export default class AcuBot extends Mob {
+export default class AcuBot extends Obstacle {
   public id: number
   public index: number
   public last!: Position
@@ -19,7 +18,6 @@ export default class AcuBot extends Mob {
     super({
       scene,
       position,
-      radius: MAXIMUM_RADIUS,
       target,
       speed: 0.00025
     })
@@ -47,34 +45,5 @@ export default class AcuBot extends Mob {
 
     this.scene.acuBots.push(this)
     this.scene.acuBotsGroup.add(this.container)
-  }
-
-  update ({ now, delta }: {
-    now: number
-    delta: number
-  }): void {
-    super.update({ now, delta })
-
-    const realPosition = this.getRealPosition()
-
-    if (this.scene.pointerPosition != null) {
-      const distance = Phaser.Math.Distance.Between(
-        realPosition.x,
-        realPosition.y,
-        this.scene.pointerPosition.x,
-        this.scene.pointerPosition.y
-      )
-
-      const margin = this.scene.SPACE + this.radius
-      const realSpace = this.scene.getReal(margin)
-      if (distance < realSpace) {
-        this.scene.open = false
-
-        this.scene.graphics.fillStyle(0xFFFF00)
-        this.scene.fillCircle({
-          realPosition, radius: margin
-        })
-      }
-    }
   }
 }
