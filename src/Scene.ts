@@ -35,10 +35,23 @@ export default class Scene extends Phaser.Scene {
   public stations!: Phaser.Physics.Arcade.StaticGroup
   public stationPositions!: Position[]
   public sugar!: Sugar
-  public counter!: Phaser.GameObjects.Text
+  public workerCounter!: Phaser.GameObjects.Text
+  public workerLabel!: Phaser.GameObjects.Text
+  public soldierCounter!: Phaser.GameObjects.Text
+  public soldierLabel!: Phaser.GameObjects.Text
+  public towerCounter!: Phaser.GameObjects.Text
+  public antCounter!: Phaser.GameObjects.Text
+  public antLabel!: Phaser.GameObjects.Text
+  public goalCounter!: Phaser.GameObjects.Text
+  public goalLabel!: Phaser.GameObjects.Text
+  public plus!: Phaser.GameObjects.Text
+  public equals!: Phaser.GameObjects.Text
+  public slash!: Phaser.GameObjects.Text
   public towersGroup!: Phaser.Physics.Arcade.StaticGroup
   public killTime = Date.now()
   public kills = 0
+  public workers = 0
+  public soldiers = 0
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -188,6 +201,8 @@ export default class Scene extends Phaser.Scene {
       bot.index = next % end
       const station = stations[bot.index]
 
+      bot.time = Date.now()
+
       bot.target = station.getRealPosition()
     }
 
@@ -209,8 +224,15 @@ export default class Scene extends Phaser.Scene {
 
           return !match
         })
+        const isSoldier: boolean = enemyContainer.getData('soldier')
+
+        if (isSoldier) {
+          this.soldiers = this.soldiers + 1
+        } else {
+          this.workers = this.workers + 1
+        }
+
         enemyContainer.destroy()
-        this.kills = this.kills + 1
 
         const realPosition = { x: enemyContainer.x, y: enemyContainer.y }
         const time = Date.now() - this.killTime
@@ -226,18 +248,150 @@ export default class Scene extends Phaser.Scene {
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
 
-    this.createBallColumn(2)
-    this.createBallColumn(5)
-    this.createBallColumn(8)
-    this.createBallColumn(11)
-    this.createBallColumn(14)
-    this.createBallColumn(17)
+    // this.createBallColumn(2)
+    // this.createBallColumn(5)
+    // this.createBallColumn(8)
+    // this.createBallColumn(11)
+    // this.createBallColumn(14)
+    // this.createBallColumn(17)
+    // this.createBallColumn(20)
 
-    const corner = { x: RATIO - 0.01, y: 1 }
-    this.counter = this.createText({
-      position: corner, content: this.kills, fontSize: 0.05, color: 'red'
+    const goalX = RATIO - 0.05
+    const goalPosition = { x: goalX, y: 1 }
+    this.goalCounter = this.createText({
+      position: goalPosition, content: '500', fontSize: 0.05, color: 'red'
     })
-    this.counter.setOrigin(1, 1)
+    this.goalCounter.setOrigin(0.5, 1)
+    this.goalCounter.alpha = 0.5
+
+    const goalLabelPosition = { x: goalX, y: 1 - 0.06 }
+    this.goalLabel = this.createText({
+      position: goalLabelPosition, content: 'Goal', fontSize: 0.03, color: 'red'
+    })
+    this.goalLabel.setOrigin(0.5, 1)
+    this.goalLabel.alpha = 0.5
+
+    const slashX = goalX - 0.075
+    const slashPosition = { x: slashX, y: 1 }
+    this.slash = this.createText({
+      position: slashPosition, content: '/', fontSize: 0.05, color: 'red'
+    })
+    this.slash.setOrigin(0.5, 1)
+    this.slash.alpha = 0.5
+
+    const antsX = slashX - 0.075
+    const antsCounterPosition = { x: antsX, y: 1 }
+    this.antCounter = this.createText({
+      position: antsCounterPosition, content: this.kills, fontSize: 0.05, color: 'red'
+    })
+    this.antCounter.setOrigin(0.5, 1)
+    this.antCounter.alpha = 0.5
+
+    const antLabelPosition = { x: antsX, y: 1 - 0.06 }
+    this.antLabel = this.createText({
+      position: antLabelPosition, content: 'Ants', fontSize: 0.03, color: 'red'
+    })
+    this.antLabel.setOrigin(0.5, 1)
+    this.antLabel.alpha = 0.5
+
+    const equalsX = antsX - 0.075
+    const equalsPosition = { x: equalsX, y: 1 }
+    this.equals = this.createText({
+      position: equalsPosition, content: '=', fontSize: 0.05, color: 'red'
+    })
+    this.equals.setOrigin(0.5, 1)
+    this.equals.alpha = 0.5
+
+    const soldiersX = equalsX - 0.075
+    const soldiersCounterPosition = { x: soldiersX, y: 1 }
+    this.soldierCounter = this.createText({
+      position: soldiersCounterPosition, content: this.kills, fontSize: 0.05, color: 'red'
+    })
+    this.soldierCounter.setOrigin(0.5, 1)
+    this.soldierCounter.alpha = 0.5
+
+    const soldiersLabelPosition = { x: soldiersX, y: 1 - 0.06 }
+    this.soldierLabel = this.createText({
+      position: soldiersLabelPosition, content: 'Soldiers', fontSize: 0.03, color: 'red'
+    })
+    this.soldierLabel.setOrigin(0.5, 1)
+    this.soldierLabel.alpha = 0.5
+
+    const realSpriteY = this.getReal(1 - 0.12)
+    const realSpriteRadius = this.getReal(0.01)
+
+    const realSoldiersX = this.getReal(soldiersX)
+    const realSoldiersPosition = { x: realSoldiersX, y: realSpriteY }
+
+    const soldiersShape = this.createCircle({
+      realPosition: realSoldiersPosition, radius: 0.02
+    })
+    soldiersShape.setStrokeStyle(2, 0xFF0000)
+    soldiersShape.alpha = 0.5
+
+    const soldiersSprite = this.add.sprite(realSoldiersX, realSpriteY, 'worker')
+    soldiersSprite.setDisplaySize(realSpriteRadius * 3, realSpriteRadius * 3)
+    soldiersSprite.alpha = 0.5
+
+    const plusX = soldiersX - 0.075
+    const plusPosition = { x: plusX, y: 1 }
+    this.plus = this.createText({
+      position: plusPosition, content: '+', fontSize: 0.05, color: 'red'
+    })
+    this.plus.setOrigin(0.5, 1)
+    this.plus.alpha = 0.5
+
+    const workersX = plusX - 0.075
+    const workersCounterPosition = { x: workersX, y: 1 }
+    this.workerCounter = this.createText({
+      position: workersCounterPosition, content: this.kills, fontSize: 0.05, color: 'red'
+    })
+    this.workerCounter.setOrigin(0.5, 1)
+    this.workerCounter.alpha = 0.5
+
+    const workerLabelPosition = { x: workersX, y: 1 - 0.06 }
+    this.workerLabel = this.createText({
+      position: workerLabelPosition, content: 'Workers', fontSize: 0.03, color: 'red'
+    })
+    this.workerLabel.setOrigin(0.5, 1)
+    this.workerLabel.alpha = 0.5
+
+    const realWorkersX = this.getReal(workersX)
+
+    const workersSprite = this.add.sprite(realWorkersX, realSpriteY, 'worker')
+    workersSprite.setDisplaySize(realSpriteRadius * 3, realSpriteRadius * 3)
+    workersSprite.alpha = 0.5
+
+    const towersX = goalX
+    const towersCounterPosition = { x: towersX, y: 0.14 }
+    this.towerCounter = this.createText({
+      position: towersCounterPosition, content: this.towers.length, fontSize: 0.05, color: 'red'
+    })
+    this.towerCounter.setOrigin(0.5, 1)
+    this.towerCounter.alpha = 0.5
+
+    const towersLabelPosition = { x: towersX, y: 0.085 }
+    const towersLabel = this.createText({
+      position: towersLabelPosition, content: 'Towers', fontSize: 0.03, color: 'red'
+    })
+    towersLabel.setOrigin(0.5, 1)
+    towersLabel.alpha = 0.5
+
+    const basePosition = { x: towersX, y: 0.04 }
+    const base = this.createCircle({
+      position: basePosition, radius: 0.01, color: 0xff0000
+    })
+    base.setOrigin(0.5, 0.5)
+    base.alpha = 0.5
+
+    const origin = { x: 0.5, y: 1 }
+    const cannon = this.createRectangle({
+      position: basePosition,
+      size: { width: 0.003, height: 0.024 },
+      color: 0xFF0000,
+      origin
+    })
+    cannon.alpha = 0.5
 
     this.scale.refresh()
   }
@@ -439,7 +593,14 @@ export default class Scene extends Phaser.Scene {
     const ratio = distance / WIDTH
     const degrees = maximum * ratio
 
-    const combinedDegrees = currentDegrees + degrees
+    const enemiesRemainder = enemiesLength % 2
+    const enemiesZero = enemiesRemainder === 0
+    const enemiesFactor = enemiesZero
+      ? 1
+      : -1
+
+    const factoredDegrees = degrees * enemiesFactor
+    const combinedDegrees = currentDegrees + factoredDegrees
     const moduloDegrees = combinedDegrees % maximum
     const absoluteDegrees = Math.abs(moduloDegrees)
     const newDegrees = absoluteDegrees - 30
@@ -592,17 +753,10 @@ export default class Scene extends Phaser.Scene {
 
         return !match
       })
+
       this.actors = this.actors.filter(tower => {
         const id = tower.container.getData('id')
         const match = towerContainerId === id
-
-        return !match
-      })
-
-      const towerId = towerContainer.getData('id')
-      this.actors = this.actors.filter(tower => {
-        const id = tower.container.getData('id')
-        const match = towerId === id
 
         return !match
       })
@@ -785,15 +939,35 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    const killsString = `${this.kills} / 500 Ants`
-    if (
-      (this.kills >= 500 && !this.over) || this.counter.style.color === 'green'
-    ) {
-      const string = `You win! ${killsString}`
-      this.counter.setText(string)
-      this.counter.setColor('green')
-    } else {
-      this.counter.setText(killsString)
+    const killsString = this.kills.toString()
+    this.antCounter.setText(killsString)
+    if (this.kills >= 500 && !this.over) {
+      this.antCounter.setColor('green')
+    }
+
+    const workersString = this.workers.toString()
+    this.workerCounter.setText(workersString)
+
+    const soldiersString = this.soldiers.toString()
+    this.soldierCounter.setText(soldiersString)
+
+    this.kills = this.workers + this.soldiers
+    this.antCounter.setText(this.kills.toString())
+
+    this.towerCounter.setText(this.towers.length.toString())
+
+    if (this.kills >= 500 && !this.over) {
+      this.goalCounter.setColor('green')
+      this.slash.setColor('green')
+      this.goalLabel.setColor('green')
+      this.antCounter.setColor('green')
+      this.antLabel.setColor('green')
+      this.equals.setColor('green')
+      this.soldierCounter.setColor('green')
+      this.soldierLabel.setColor('green')
+      this.workerCounter.setColor('green')
+      this.plus.setColor('green')
+      this.workerLabel.setColor('green')
     }
   }
 }

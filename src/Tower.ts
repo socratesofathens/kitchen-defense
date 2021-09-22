@@ -221,8 +221,15 @@ export default class Tower extends Static {
 
         return !match
       })
+      const isSoldier: boolean = container.getData('solider')
+      console.log('isSoldier test:', isSoldier)
+
+      if (isSoldier) {
+        this.scene.soldiers = this.scene.soldiers + 1
+      } else {
+        this.scene.workers = this.scene.workers + 1
+      }
       container.destroy()
-      this.scene.kills = this.scene.kills + 1
     })
   }
 

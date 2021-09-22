@@ -9,6 +9,7 @@ export default class AcuBot extends Obstacle {
   public last!: Position
   public ready: boolean
   public killTime: number
+  public time?: number
 
   constructor ({ scene, position }: {
     scene: Scene
@@ -62,6 +63,20 @@ export default class AcuBot extends Obstacle {
     delta: number
   }): void {
     super.update({ now, delta })
+
+    if (this.time != null) {
+      const difference = Date.now() - this.time
+      if (difference > 10000) {
+        const next = this.index + 1
+        const end = this.scene.stationPositions.length
+        this.index = next % end
+        const station = this.scene.stationPositions[this.index]
+
+        this.time = Date.now()
+
+        this.target = station
+      }
+    }
 
     if (this.killTime > 0) {
       const now = Date.now()

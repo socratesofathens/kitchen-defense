@@ -21,6 +21,8 @@ export default class Soldier extends Enemy {
       speed
     })
 
+    this.container.setData('soldier', true)
+
     const shape = this.scene.createCircle({
       position: this.scene.ORIGIN, radius
     })

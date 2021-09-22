@@ -44,10 +44,13 @@ export default class Sugar extends Actor {
           this.container.setScale(newScale)
         } else {
           this.scene.over = true
+          const color = this.scene.kills >= 500
+            ? 'green'
+            : 'red'
           this.scene.createText({
             position: this.scene.CENTER,
             content: `GAME OVER\n${this.scene.kills} ANTS`,
-            color: 'red',
+            color,
             fontSize: 0.25
           })
         }

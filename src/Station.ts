@@ -1,7 +1,6 @@
 import Static from './Static'
 import Scene from './Scene'
 import { Position } from './types'
-import { MAXIMUM_DIAMETER } from './config'
 
 export default class Station extends Static {
   constructor ({ scene, position, realPosition }: {
