@@ -4,6 +4,7 @@ import { AnyGroup, Position } from './types'
 
 export default class Actor {
   container: Phaser.GameObjects.Container
+  initialPosition: Position | undefined
   radius: number
   realRadius: number
   scene: Scene
@@ -17,6 +18,8 @@ export default class Actor {
   }) {
     this.scene = scene
     this.radius = radius
+    this.initialPosition = position
+
     this.realRadius = this.scene.getReal(this.radius)
 
     const realDiameter = this.realRadius * 2
@@ -90,15 +93,17 @@ export default class Actor {
   getRealPosition (): Position {
     if (this.container.body == null) {
       console.warn('Actor has no body')
+
+      return { x: 0, y: 0 }
+    } else {
+      if ('x' in this.container.body && 'y' in this.container.body) {
+        const position = { x: this.container.x, y: this.container.y }
+
+        return position
+      }
+
+      throw new Error('Actor has no body position')
     }
-
-    if ('x' in this.container.body && 'y' in this.container.body) {
-      const position = { x: this.container.x, y: this.container.y }
-
-      return position
-    }
-
-    throw new Error('Actor has no body position')
   }
 
   update ({ now, delta }: {

@@ -221,8 +221,7 @@ export default class Tower extends Static {
 
         return !match
       })
-      const isSoldier: boolean = container.getData('solider')
-      console.log('isSoldier test:', isSoldier)
+      const isSoldier: boolean = container.getData('soldier')
 
       if (isSoldier) {
         this.scene.soldiers = this.scene.soldiers + 1
@@ -303,7 +302,7 @@ export default class Tower extends Static {
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.graphics.strokeLineShape(tracer)
 
-      this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
+      this.scene.graphics.lineStyle(1, 0xFF0000, 0.5)
       if (this.realPosition == null) {
         throw new Error('Tower has no real position')
       }

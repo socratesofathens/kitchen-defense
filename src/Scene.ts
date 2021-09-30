@@ -47,11 +47,18 @@ export default class Scene extends Phaser.Scene {
   public plus!: Phaser.GameObjects.Text
   public equals!: Phaser.GameObjects.Text
   public slash!: Phaser.GameObjects.Text
+  public resetLabel!: Phaser.GameObjects.Text
+  public resetPosition = { x: 0.07, y: 0.08 }
+  public continuePosition = { x: HALF_RATIO, y: 0.08 }
   public towersGroup!: Phaser.Physics.Arcade.StaticGroup
   public killTime = Date.now()
   public kills = 0
-  public workers = 0
+  public workers = 499
   public soldiers = 0
+  public victory = false
+  public score = 0
+  public continueLabel!: Phaser.GameObjects.Text
+  public victoryLabel!: Phaser.GameObjects.Text
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -83,7 +90,7 @@ export default class Scene extends Phaser.Scene {
     this.soldiersGroup = this.physics.add.group()
     this.sugar = new Sugar(this)
 
-    const position = { x: 1.45, y: 0.40 }
+    const position = { x: 1.25, y: 0.5 }
     this.queen = new Soldier({ scene: this, position })
     this.createWorkers({ position: this.ORIGIN })
 
@@ -92,8 +99,42 @@ export default class Scene extends Phaser.Scene {
 
     this.setupTowers()
 
+    this.resetLabel = this.createText({
+      position: this.resetPosition,
+      fontSize: 0.04,
+      color: 'white',
+      content: 'Reset'
+    })
+    this.resetLabel.setInteractive()
+    this.resetLabel.on('pointerup', (pointer: any, localX: any, localY: any, event: any) => {
+      console.log('reset')
+      this.over = false
+      this.registry.destroy()
+      this.events.destroy()
+      this.cameras.resetAll()
+      this.scene.stop()
+
+      // event.stopPropagation()
+    })
+    this.resetLabel.setVisible(false)
+
+    this.continueLabel = this.createText({
+      position: this.continuePosition,
+      fontSize: 0.04,
+      color: 'white',
+      content: 'Continue'
+    })
+    this.continueLabel.setInteractive()
+    this.continueLabel.on('pointerdown', (pointer: any, localX: any, localY: any, event: any) => {
+      const custom = new CustomEvent('continue', { detail: this.score })
+      document.dispatchEvent(custom)
+
+      event.stopPropagation()
+    })
+    this.continueLabel.setVisible(false)
+
     this.input.on(
-      Phaser.Input.Events.POINTER_UP,
+      Phaser.Input.Events.POINTER_DOWN,
       (pointer: Phaser.Input.Pointer) => {
         if (this.ready) {
           const realPosition = { x: pointer.worldX, y: pointer.worldY }
@@ -149,31 +190,41 @@ export default class Scene extends Phaser.Scene {
 
     this.acuBotsGroup = this.physics.add.group()
 
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 7 })
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 8 })
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 9 })
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 10 })
-    this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 11 })
-    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 7 })
-    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 8 })
-    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 9 })
-    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 10 })
-    this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 11 })
-    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 7 })
-    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 8 })
-    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 9 })
-    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 10 })
-    this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 11 })
-    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 7 })
-    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 8 })
-    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 9 })
-    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 10 })
-    this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 11 })
+    // this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 8 })
+    // this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 9 })
+    // this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 10 })
+    // this.createAcuBot({ x: this.SPACE * 15, y: this.SPACE * 11 })
+    // this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 7 })
+    // this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 8 })
+    // this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 9 })
+    // this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 10 })
+    // this.createAcuBot({ x: this.SPACE * 20, y: this.SPACE * 11 })
+    // this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 7 })
+    // this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 8 })
+    // this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 9 })
+    // this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 10 })
+    // this.createAcuBot({ x: this.SPACE * 25, y: this.SPACE * 11 })
+    // this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 7 })
+    // this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 8 })
+    // this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 9 })
+    // this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 10 })
+    // this.createAcuBot({ x: this.SPACE * 30, y: this.SPACE * 11 })
 
     const onNext = (
       stationContainer: Phaser.GameObjects.GameObject,
       botContainer: Phaser.GameObjects.GameObject
     ): void => {
+      const stationId = stationContainer.getData('id')
+      const station = stations.find(station => {
+        const containerId = station.container.getData('id')
+        const match = containerId === stationId
+
+        return match
+      })
+      if (station != null) {
+        station.count = station.count + 1
+      }
+
       const last = botContainer.getData('last')
       if (stationContainer.body.position === last) {
         return
@@ -181,11 +232,11 @@ export default class Scene extends Phaser.Scene {
         botContainer.setData('last', stationContainer.body.position)
       }
 
-      const id = botContainer.getData('id')
+      const botId = botContainer.getData('id')
 
       const bot = this.acuBots.find(bot => {
-        const botId = bot.container.getData('id')
-        const match = botId === id
+        const containerId = bot.container.getData('id')
+        const match = containerId === botId
 
         return match
       })
@@ -199,11 +250,11 @@ export default class Scene extends Phaser.Scene {
       const next = bot.index + 1
       const end = stations.length
       bot.index = next % end
-      const station = stations[bot.index]
+      const target = stations[bot.index]
 
       bot.time = Date.now()
 
-      bot.target = station.getRealPosition()
+      bot.target = target.getRealPosition()
     }
 
     this.collider = this.physics.add.collider(
@@ -541,16 +592,24 @@ export default class Scene extends Phaser.Scene {
     return rectangle
   }
 
-  createText ({ position, realPosition, content, color = 'black', fontSize }: {
+  createText ({
+    position, realPosition, content, color = 'black', fontSize, fontStyle
+  }: {
     position?: Position
     realPosition?: Position
     content: string | number
     color?: string
     fontSize?: number
+    fontStyle?: string
   }): Phaser.GameObjects.Text {
     realPosition = this.checkRealPosition({ position, realPosition })
 
-    const style: { fontFamily: string, color?: string } = { fontFamily: 'Arial' }
+    const style: {
+      fontFamily: string
+      color?: string
+      fontStyle?: string
+    } = { fontFamily: 'Arial', fontStyle }
+
     if (color != null) {
       style.color = color
     }
@@ -625,7 +684,7 @@ export default class Scene extends Phaser.Scene {
 
     if (this.towers.length > 0 && enemiesLength > 5) {
       const enemiesRatio = (enemiesLength / 2) / this.towers.length
-      const enemiesDivisor = (Math.ceil(enemiesRatio) % 10) + 1
+      const enemiesDivisor = (Math.ceil(enemiesRatio) % 15) + 1
       const enemiesRemainder = enemiesLength % enemiesDivisor
       const enemiesZero = enemiesRemainder === 0
 
@@ -651,7 +710,7 @@ export default class Scene extends Phaser.Scene {
       const death = this.checkRealPosition({ position, realPosition })
 
       const logTime = Math.log(time)
-      const fraction = 10
+      const fraction = 15
       const fractionTime = logTime > 0
         ? logTime / fraction
         : 0
@@ -682,6 +741,30 @@ export default class Scene extends Phaser.Scene {
     realRadius = this.checkRealNumber({ value: radius, real: realRadius })
 
     this.graphics.fillCircle(realPosition.x, realPosition.y, realRadius)
+  }
+
+  fillRounded ({ position, realPosition, size, color, radius = 0.01 }: {
+    position?: Position
+    realPosition?: Position
+    size: Size
+    color: number
+    radius?: number
+  }): void {
+    realPosition = this.checkRealPosition({ position, realPosition })
+
+    const realSize = this.getRealSize(size)
+    const { width, height } = realSize
+
+    const halfWidth = width / 2
+    const halfHeight = height / 2
+
+    const x = realPosition.x - halfWidth
+    const y = realPosition.y - halfHeight
+
+    const realRadius = this.getReal(radius)
+
+    this.graphics.fillStyle(color, 1)
+    this.graphics.fillRoundedRect(x, y, width, height, realRadius)
   }
 
   getId (): number {
@@ -874,7 +957,7 @@ export default class Scene extends Phaser.Scene {
     }
 
     const log = Math.log(this.firing)
-    const quotient = log / 2
+    const quotient = log
     const base = 1.5
     const added = base + quotient
 
@@ -943,6 +1026,33 @@ export default class Scene extends Phaser.Scene {
     this.antCounter.setText(killsString)
     if (this.kills >= 500 && !this.over) {
       this.antCounter.setColor('green')
+      if (!this.victory) {
+        this.victoryLabel = this.createText({
+          position: { x: HALF_RATIO, y: 0 },
+          content: 'Victory',
+          color: 'green',
+          fontSize: 0.05
+        })
+        this.victoryLabel.setOrigin(0.5, 0)
+        this.victoryLabel.alpha = 0.5
+        this.continueLabel.setVisible(true)
+      }
+      this.victory = true
+      this.score = this.kills
+
+      const victoryLabelText = `Victory (${this.score})`
+      if (this.victoryLabel != null) {
+        this.victoryLabel.setText(victoryLabelText)
+      }
+    }
+
+    if (this.score > 0) {
+      this.fillRounded({
+        position: this.continuePosition,
+        size: { width: 0.2, height: 0.05 },
+        color: 0x008000
+      })
+      this.children.bringToTop(this.continueLabel)
     }
 
     const workersString = this.workers.toString()
@@ -968,6 +1078,24 @@ export default class Scene extends Phaser.Scene {
       this.workerCounter.setColor('green')
       this.plus.setColor('green')
       this.workerLabel.setColor('green')
+
+      if (this.acuBots.length < 1) {
+        this.createAcuBot({ x: 0, y: 0 })
+      }
     }
+
+    if (this.over) {
+      const resetBackSize = { width: 0.12, height: 0.05 }
+      this.fillRounded({
+        position: this.resetPosition,
+        size: resetBackSize,
+        color: 0xFF0000,
+        radius: 0.01
+      })
+
+      this.children.bringToTop(this.resetLabel)
+    }
+
+    this.scale.refresh()
   }
 }

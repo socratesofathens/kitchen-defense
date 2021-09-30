@@ -3,7 +3,7 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Enemy extends Mob {
-  constructor ({ scene, position, realPosition, radius, speed }: {
+  constructor ({ scene, position, realPosition, radius, speed = 0.00015 }: {
     scene: Scene
     position?: Position
     realPosition?: Position

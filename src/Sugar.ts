@@ -39,20 +39,23 @@ export default class Sugar extends Actor {
       enemy: Phaser.GameObjects.GameObject
     ): void => {
       if (!this.scene.over) {
-        const newScale = this.container.scale - 0.01
+        const newScale = this.container.scale - 1.1
         if (newScale > 0 && !this.scene.over) {
           this.container.setScale(newScale)
         } else {
           this.scene.over = true
-          const color = this.scene.kills >= 500
-            ? 'green'
-            : 'red'
-          this.scene.createText({
-            position: this.scene.CENTER,
-            content: `GAME OVER\n${this.scene.kills} ANTS`,
-            color,
-            fontSize: 0.25
+
+          const overPosition = { x: 0, y: 0 }
+          const over = this.scene.createText({
+            position: overPosition,
+            content: 'Game Over',
+            fontSize: 0.05,
+            color: 'red'
           })
+          over.setOrigin(0, 0)
+          over.alpha = 0.5
+
+          this.scene.resetLabel.setVisible(true)
         }
       }
 

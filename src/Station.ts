@@ -3,6 +3,10 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Station extends Static {
+  public readonly label: Phaser.GameObjects.Text
+  public count = 0
+  public goal = 100
+
   constructor ({ scene, position, realPosition }: {
     scene: Scene
     position?: Position
@@ -18,10 +22,10 @@ export default class Station extends Static {
     base.setStrokeStyle(4, 0x000000)
     this.container.add(base)
 
-    const label = this.scene.createText({
-      position: this.scene.ORIGIN, content: 'AcuStation', fontSize: 0.0175, color: 'black'
+    this.label = this.scene.createText({
+      position: this.scene.ORIGIN, content: this.goal, fontSize: 0.0175, color: 'black'
     })
-    this.container.add(label)
+    this.container.add(this.label)
 
     this.scene.stations.add(this.container)
   }
@@ -50,6 +54,21 @@ export default class Station extends Static {
           realPosition: this.realPosition, radius: margin
         })
       }
+    }
+
+    const remainder = this.goal - this.count
+
+    if (remainder <= 0) {
+      if (this.initialPosition != null) {
+        this.scene.createAcuBot(this.initialPosition)
+      }
+
+      this.goal = this.goal * 10
+      this.count = 0
+
+      this.label.setText(this.goal.toString())
+    } else {
+      this.label.setText(remainder.toString())
     }
   }
 }

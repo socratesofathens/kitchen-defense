@@ -42,7 +42,7 @@ export default class AcuBot extends Obstacle {
     this.container.add(this.base)
 
     const label = this.scene.createText({
-      position: this.scene.ORIGIN, content: 'AcuBot', fontSize: 0.0125
+      position: this.scene.ORIGIN, content: 'AcuBot', fontSize: 0.01
     })
     this.container.add(label)
 
@@ -74,7 +74,7 @@ export default class AcuBot extends Obstacle {
 
         this.time = Date.now()
 
-        this.target = station
+        this.target = this.scene.getRealPosition(station)
       }
     }
 
@@ -85,6 +85,15 @@ export default class AcuBot extends Obstacle {
       const killing = killDifference < 1000
       if (killing) {
         this.base.setFillStyle(0xFF0000)
+
+        this.scene.firing = this.scene.firing + 1
+
+        if (this.scene.pointerPosition != null) {
+          this.scene.graphics.lineStyle(1, 0xff0000, 0.5)
+          this.scene.strokeLine({
+            realA: this.getRealPosition(), realB: this.scene.pointerPosition
+          })
+        }
       } else {
         this.ready = false
 
@@ -98,5 +107,8 @@ export default class AcuBot extends Obstacle {
         this.base.setFillStyle(0x00FF00)
       }
     }
+
+    this.scene.graphics.fillStyle(0x00FF00, 0.5)
+    this.scene.fillCircle({ realPosition: this.target })
   }
 }
