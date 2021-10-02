@@ -18,16 +18,11 @@ export default class Soldier extends Enemy {
       position,
       realPosition,
       radius,
-      speed
+      speed,
+      image: 'soldier'
     })
 
     this.container.setData('soldier', true)
-
-    const shape = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius
-    })
-    shape.setStrokeStyle(2, 0xFF0000)
-    this.container.add(shape)
 
     this.scene.soldiersGroup.add(this.container)
   }

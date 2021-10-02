@@ -39,6 +39,9 @@ export default class Actor {
       this.container.body.setCircle(this.realRadius)
     }
 
+    // this.scene.add.existing(this)
+    // this.scene.mobs.add(this)
+
     this.scene.actors.push(this)
   }
 

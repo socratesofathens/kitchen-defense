@@ -4,7 +4,7 @@ import Scene from './Scene'
 import { Position } from './types'
 
 export default class Sugar extends Actor {
-  public readonly position: Position
+  public readonly _position: Position
   public readonly realPosition: Position
 
   constructor (scene: Scene) {
@@ -17,7 +17,7 @@ export default class Sugar extends Actor {
       this.container.body.setImmovable()
     }
 
-    this.position = position
+    this._position = position
     this.realPosition = this.scene.getRealPosition(position)
 
     const circle = this.scene.createCircle({

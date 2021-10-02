@@ -28,7 +28,7 @@ export default class Mob extends Actor {
     }
   }
 
-  moveTo ({ position, speed }: {
+  _moveTo ({ position, speed }: {
     position: Position
     speed: number
   }): void {

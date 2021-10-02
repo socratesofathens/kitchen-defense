@@ -14,6 +14,9 @@ import Sugar from './Sugar'
 import Tower from './Tower'
 import { Position, Size } from './types'
 import worker from './worker.png'
+import soldier from './soldier.png'
+import base from './base.png'
+import cannon from './cannon.png'
 
 export default class Scene extends Phaser.Scene {
   public actors: Actor[] = []
@@ -79,15 +82,38 @@ export default class Scene extends Phaser.Scene {
 
   preload (): void {
     this.load.image('worker', worker)
+    this.load.image('base', base)
+    this.load.image('soldier', soldier)
+    this.load.image('cannon', cannon)
   }
 
   create (): void {
+    console.log('create test')
+    this.actors = []
+    this.towers = []
+    this.acuBots = []
+    this.battery = 0
+    this.firing = 1
+    this.open = false
+    this.over = false
+    this.start = Date.now()
+    this.killTime = Date.now()
+    this.kills = 0
+    this.workers = 0
+    this.soldiers = 0
+    this.victory = false
+    this.score = 0
+    this.full = false
+    this.id = 0
+    this.ready = false
+
     this.graphics = this.add.graphics()
     this.REAL_CENTER = this.getRealPosition(this.CENTER)
 
     this.mobs = this.physics.add.group()
     this.enemies = this.physics.add.group()
     this.soldiersGroup = this.physics.add.group()
+
     this.sugar = new Sugar(this)
 
     const position = { x: 1.25, y: 0.5 }
@@ -109,10 +135,17 @@ export default class Scene extends Phaser.Scene {
     this.resetLabel.on('pointerup', (pointer: any, localX: any, localY: any, event: any) => {
       console.log('reset')
       this.over = false
-      this.registry.destroy()
-      this.events.destroy()
-      this.cameras.resetAll()
-      this.scene.stop()
+      // this.events.removeAllListeners()
+      // this.registry.reset()
+      // this.cameras.resetAll()
+      this.actors.forEach(actor => actor.container.destroy())
+      // this.scene.stop()
+      // this.scene.start()
+      this.actors = []
+      this.towers = []
+      this.acuBots = []
+      this.stationPositions = []
+      this.scene.restart()
 
       // event.stopPropagation()
     })
@@ -222,7 +255,7 @@ export default class Scene extends Phaser.Scene {
         return match
       })
       if (station != null) {
-        station.count = station.count + 1
+        station._count = station._count + 1
       }
 
       const last = botContainer.getData('last')
@@ -299,6 +332,7 @@ export default class Scene extends Phaser.Scene {
     this.physics.add.collider(this.mobs, this.mobs)
     this.physics.add.collider(this.mobs, this.statics)
 
+    // this.createBall({ x: 1, y: 2 })
     // this.createBallColumn(2)
     // this.createBallColumn(5)
     // this.createBallColumn(8)
@@ -372,15 +406,8 @@ export default class Scene extends Phaser.Scene {
     const realSpriteRadius = this.getReal(0.01)
 
     const realSoldiersX = this.getReal(soldiersX)
-    const realSoldiersPosition = { x: realSoldiersX, y: realSpriteY }
 
-    const soldiersShape = this.createCircle({
-      realPosition: realSoldiersPosition, radius: 0.02
-    })
-    soldiersShape.setStrokeStyle(2, 0xFF0000)
-    soldiersShape.alpha = 0.5
-
-    const soldiersSprite = this.add.sprite(realSoldiersX, realSpriteY, 'worker')
+    const soldiersSprite = this.add.sprite(realSoldiersX, realSpriteY, 'soldier')
     soldiersSprite.setDisplaySize(realSpriteRadius * 3, realSpriteRadius * 3)
     soldiersSprite.alpha = 0.5
 
@@ -1095,6 +1122,8 @@ export default class Scene extends Phaser.Scene {
 
       this.children.bringToTop(this.resetLabel)
     }
+
+    console.log('update test:', this.actors.length)
 
     this.scale.refresh()
   }

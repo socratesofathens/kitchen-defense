@@ -6,7 +6,6 @@ export default class AcuBot extends Obstacle {
   public base: Phaser.GameObjects.Arc
   public id: number
   public index: number
-  public last!: Position
   public ready: boolean
   public killTime: number
   public time?: number

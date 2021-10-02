@@ -4,7 +4,7 @@ import { Position } from './types'
 
 export default class Station extends Static {
   public readonly label: Phaser.GameObjects.Text
-  public count = 0
+  public _count = 0
   public goal = 100
 
   constructor ({ scene, position, realPosition }: {
@@ -56,7 +56,7 @@ export default class Station extends Static {
       }
     }
 
-    const remainder = this.goal - this.count
+    const remainder = this.goal - this._count
 
     if (remainder <= 0) {
       if (this.initialPosition != null) {
@@ -64,7 +64,7 @@ export default class Station extends Static {
       }
 
       this.goal = this.goal * 10
-      this.count = 0
+      this._count = 0
 
       this.label.setText(this.goal.toString())
     } else {

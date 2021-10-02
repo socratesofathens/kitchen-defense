@@ -8,11 +8,6 @@ const GlobalStyle = createGlobalStyle`
     background: black;
   }
   
-  ion-phaser { 
-    width: 100vw !important;
-    height: 100vh !important;
-  }  
-
   canvas {
     object-fit: cover
   }

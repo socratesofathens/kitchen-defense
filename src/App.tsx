@@ -3,11 +3,13 @@ import { IonPhaser } from '@ion-phaser/react'
 import GlobalStyle from './style/global'
 
 import config from './config'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function App ({ next }: {
   next?: (score: any) => any
 }): JSX.Element {
+  const [show, setShow] = useState(true)
+
   function onContinue (): () => void {
     const listener = (e: any): void => {
       console.log('detail test:', e.detail)
@@ -23,11 +25,17 @@ export default function App ({ next }: {
 
   useEffect(onContinue)
 
-  return (
-    <>
-      <GlobalStyle />
+  if (show) {
+    return (
+      <>
+        <GlobalStyle />
 
-      <IonPhaser game={config} id='ion-phaser' />
-    </>
-  )
+        <button onClick={() => setShow(false)}>Hide</button>
+
+        <IonPhaser game={config} initialize />
+      </>
+    )
+  } else {
+    return <button onClick={() => setShow(true)}>Show</button>
+  }
 }

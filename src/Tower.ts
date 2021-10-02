@@ -25,23 +25,16 @@ export default class Tower extends Static {
       scene, position, realPosition, radius: 0.01
     })
 
-    const id = this.scene.getId()
-    this.container.setData('id', id)
-
     this.range = this.scene.SPACE * 3
     this.realRange = this.scene.getReal(this.range)
     this.fireTime = Date.now()
 
-    const base = this.scene.createCircle({
-      position: this.scene.ORIGIN, radius: this.radius, color: 0xff0000
-    })
+    const base = this.scene.add.sprite(0, 0, 'base')
+    base.setDisplaySize(this.realRadius * 2, this.realRadius * 2)
     this.container.add(base)
 
-    const origin = { x: 0, y: 0.5 }
-    const size = { width: 0.024, height: 0.003 }
-    const cannon = this.scene.createRectangle({
-      position: this.scene.ORIGIN, size, color: 0xFF0000, origin
-    })
+    const cannon = this.scene.add.sprite(this.realRadius / 2, 0, 'cannon')
+    cannon.setScale(0.1)
     this.container.add(cannon)
 
     const tip = { x: 0.024, y: 0 }
