@@ -83,4 +83,19 @@ export default class Sugar extends Actor {
     this.scene.physics.add.collider(this.container, this.scene.enemies, onEat)
     this.scene.physics.add.collider(this.container, this.scene.mobs)
   }
+
+  update ({ now, delta }: {
+    now: number
+    delta: number
+  }): void {
+    super.update({ now, delta })
+
+    this.scene.graphics.lineStyle(1, 0x000000, 0.25)
+
+    const radius = this.realRadius * this.container.scale + this.scene.realSpace
+
+    this.scene.graphics.strokeCircle(
+      this.realPosition.x, this.realPosition.y, radius
+    )
+  }
 }

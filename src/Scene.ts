@@ -62,6 +62,8 @@ export default class Scene extends Phaser.Scene {
   public score = 0
   public continueLabel!: Phaser.GameObjects.Text
   public victoryLabel!: Phaser.GameObjects.Text
+  public realSpace!: number
+  public full = false
 
   public readonly CENTER: Position = { x: HALF_RATIO, y: 0.5 }
   public readonly ORIGIN: Position = { x: 0, y: 0 }
@@ -69,7 +71,6 @@ export default class Scene extends Phaser.Scene {
 
   protected REAL_CENTER!: Position
 
-  private full = false
   private id = 0
   private queen!: Enemy
   private ready = false
@@ -105,6 +106,8 @@ export default class Scene extends Phaser.Scene {
     this.full = false
     this.id = 0
     this.ready = false
+
+    this.realSpace = this.getReal(this.SPACE)
 
     this.graphics = this.add.graphics()
     this.REAL_CENTER = this.getRealPosition(this.CENTER)
@@ -158,7 +161,6 @@ export default class Scene extends Phaser.Scene {
     })
     this.continueLabel.setInteractive()
     this.continueLabel.on('pointerdown', (pointer: any, localX: any, localY: any, event: any) => {
-      console.log('continue score test:', this.score)
       const custom = new CustomEvent('continue', { detail: this.score })
       document.dispatchEvent(custom)
 
@@ -733,7 +735,6 @@ export default class Scene extends Phaser.Scene {
     time?: number
   }): void {
     const enemiesLength = this.enemies.getLength()
-    console.log('enemiesLength test:', enemiesLength)
     if (enemiesLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
@@ -941,6 +942,7 @@ export default class Scene extends Phaser.Scene {
     this.graphics.clear()
     this.firing = 0
 
+    this.graphics.lineStyle(1, 0x000000, 0.1)
     const vertical = this.createRangeRatio(this.SPACE)
     vertical.forEach(x => this.strokeVertical(x))
 
@@ -973,24 +975,19 @@ export default class Scene extends Phaser.Scene {
         this.pointerPosition.y
       )
 
-      const radius = this.sugar.radius + this.SPACE
-      const space = this.sugar.container.scale * radius
-      const realSpace = this.getReal(space)
-      if (distance < realSpace) {
+      const radius = this.sugar.realRadius * this.sugar.container.scale + this.realSpace
+      if (distance < radius) {
         this.open = false
 
         this.graphics.fillStyle(0xFFFF00)
-        this.fillCircle({ realPosition: this.sugar.realPosition, radius: space })
+        this.fillCircle({ realPosition: this.sugar.realPosition, realRadius: radius })
       }
     }
 
     const divisor = this.towers.length > 0
       ? this.towers.length
       : 1
-    console.log('delta test:', delta)
-    console.log('divisor test:', divisor)
     const charge = delta / divisor
-    console.log('charge test:', charge)
 
     this.battery = this.battery + charge
     if (this.battery > this.maximum) {

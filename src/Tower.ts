@@ -260,25 +260,6 @@ export default class Tower extends Static {
       ? Infinity
       : now - this.fireTime
 
-    if (this.scene.pointerPosition != null) {
-      const distance = Phaser.Math.Distance.Between(
-        this.realPosition.x,
-        this.realPosition.y,
-        this.scene.pointerPosition.x,
-        this.scene.pointerPosition.y
-      )
-
-      const realSpace = this.scene.getReal(this.scene.SPACE)
-      if (distance < realSpace) {
-        this.scene.open = false
-
-        this.scene.graphics.fillStyle(0xFFFF00)
-        this.scene.fillCircle({
-          realPosition: this.realPosition, radius: this.scene.SPACE
-        })
-      }
-    }
-
     const tracer = this.createTracer()
     const enemies = this
       .scene
@@ -292,11 +273,11 @@ export default class Tower extends Static {
       this.rotateTo({ realPosition, rate: 0.005 })
     }
 
-    this.scene.graphics.lineStyle(1, 0xFF0000, 0.5)
     if (this.realPosition == null) {
       throw new Error('Tower has no real position')
     }
-    if (this.scene.pointerPosition != null) {
+    if (this.scene.pointerPosition != null && !this.scene.full) {
+      this.scene.graphics.lineStyle(1, 0xFF0000, 0.25)
       this.scene.strokeLine({
         realA: this.realPosition, realB: this.scene.pointerPosition
       })
@@ -314,9 +295,9 @@ export default class Tower extends Static {
       if (recharged) {
         this.attack({ now, tracer, enemies })
 
-        this.scene.graphics.lineStyle(1, 0x00FF00, 1.0)
+        this.scene.graphics.lineStyle(1, 0x00FF00, 0.5)
       } else {
-        this.scene.graphics.lineStyle(1, 0x00FFFF, 1.0)
+        this.scene.graphics.lineStyle(1, 0x00FFFF, 0.4)
       }
 
       this.scene.graphics.strokeLineShape(tracer)
