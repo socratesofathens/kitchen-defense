@@ -112,8 +112,14 @@ export default class Tower extends Static {
   }
 
   getNearest (
-    targets: Phaser.GameObjects.Container[]
+    targets?: Phaser.GameObjects.Container[]
   ): Phaser.GameObjects.Container | undefined {
+    if (targets == null) {
+      targets = this
+        .scene
+        .enemies
+        .getChildren() as Phaser.GameObjects.Container[]
+    }
     const closest: Result<number> = { value: Infinity }
 
     targets.forEach((target) => {
@@ -254,12 +260,6 @@ export default class Tower extends Static {
       ? Infinity
       : now - this.fireTime
 
-    const tracer = this.createTracer()
-    const enemies = this
-      .scene
-      .enemies
-      .getChildren() as Phaser.GameObjects.Container[]
-
     if (this.scene.pointerPosition != null) {
       const distance = Phaser.Math.Distance.Between(
         this.realPosition.x,
@@ -279,12 +279,27 @@ export default class Tower extends Static {
       }
     }
 
-    this.scene.graphics.fillStyle(0x0000FF)
+    const tracer = this.createTracer()
+    const enemies = this
+      .scene
+      .enemies
+      .getChildren() as Phaser.GameObjects.Container[]
+
     const nearest = this.getNearest(enemies)
 
     if (nearest != null) {
       const realPosition = { x: nearest.x, y: nearest.y }
       this.rotateTo({ realPosition, rate: 0.005 })
+    }
+
+    this.scene.graphics.lineStyle(1, 0xFF0000, 0.5)
+    if (this.realPosition == null) {
+      throw new Error('Tower has no real position')
+    }
+    if (this.scene.pointerPosition != null) {
+      this.scene.strokeLine({
+        realA: this.realPosition, realB: this.scene.pointerPosition
+      })
     }
 
     const firing = fireDifference < this.laserTime
@@ -294,16 +309,6 @@ export default class Tower extends Static {
 
       this.scene.graphics.lineStyle(1, 0xFF0000, 1.0)
       this.scene.graphics.strokeLineShape(tracer)
-
-      this.scene.graphics.lineStyle(1, 0xFF0000, 0.5)
-      if (this.realPosition == null) {
-        throw new Error('Tower has no real position')
-      }
-      if (this.scene.pointerPosition != null) {
-        this.scene.strokeLine({
-          realA: this.realPosition, realB: this.scene.pointerPosition
-        })
-      }
     } else if (nearest != null) {
       const recharged = fireDifference > this.rechargeTime
       if (recharged) {

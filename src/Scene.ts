@@ -56,7 +56,7 @@ export default class Scene extends Phaser.Scene {
   public towersGroup!: Phaser.Physics.Arcade.StaticGroup
   public killTime = Date.now()
   public kills = 0
-  public workers = 499
+  public workers = 0
   public soldiers = 0
   public victory = false
   public score = 0
@@ -74,7 +74,7 @@ export default class Scene extends Phaser.Scene {
   private queen!: Enemy
   private ready = false
 
-  private readonly maximum = 3000
+  private readonly maximum = 1000
 
   init (): void {
     this.cameras.main.setBackgroundColor('#FFFFFF')
@@ -88,7 +88,6 @@ export default class Scene extends Phaser.Scene {
   }
 
   create (): void {
-    console.log('create test')
     this.actors = []
     this.towers = []
     this.acuBots = []
@@ -155,10 +154,11 @@ export default class Scene extends Phaser.Scene {
       position: this.continuePosition,
       fontSize: 0.04,
       color: 'white',
-      content: 'Continue'
+      content: 'Continue!'
     })
     this.continueLabel.setInteractive()
     this.continueLabel.on('pointerdown', (pointer: any, localX: any, localY: any, event: any) => {
+      console.log('continue score test:', this.score)
       const custom = new CustomEvent('continue', { detail: this.score })
       document.dispatchEvent(custom)
 
@@ -733,6 +733,7 @@ export default class Scene extends Phaser.Scene {
     time?: number
   }): void {
     const enemiesLength = this.enemies.getLength()
+    console.log('enemiesLength test:', enemiesLength)
     if (enemiesLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
@@ -983,19 +984,13 @@ export default class Scene extends Phaser.Scene {
       }
     }
 
-    const log = Math.log(this.firing)
-    const quotient = log
-    const base = 1.5
-    const added = base + quotient
-
-    const equal = this.firing === 1
-    const greater = this.firing > 1
-    const firing = equal
-      ? base
-      : greater
-        ? added
-        : 1
-    const charge = delta / firing
+    const divisor = this.towers.length > 0
+      ? this.towers.length
+      : 1
+    console.log('delta test:', delta)
+    console.log('divisor test:', divisor)
+    const charge = delta / divisor
+    console.log('charge test:', charge)
 
     this.battery = this.battery + charge
     if (this.battery > this.maximum) {
@@ -1122,8 +1117,6 @@ export default class Scene extends Phaser.Scene {
 
       this.children.bringToTop(this.resetLabel)
     }
-
-    console.log('update test:', this.actors.length)
 
     this.scale.refresh()
   }

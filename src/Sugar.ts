@@ -39,7 +39,7 @@ export default class Sugar extends Actor {
       enemy: Phaser.GameObjects.GameObject
     ): void => {
       if (!this.scene.over) {
-        const newScale = this.container.scale - 1.1
+        const newScale = this.container.scale - 0.01
         if (newScale > 0 && !this.scene.over) {
           this.container.setScale(newScale)
         } else {

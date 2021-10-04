@@ -1,5 +1,3 @@
-import Scene from './Scene'
-
 export const WIDTH = 1600
 export const HALF_WIDTH = WIDTH / 2
 
@@ -28,21 +26,3 @@ export const SIXTEEN = BLOCK * 16
 
 export const MAXIMUM_DIAMETER = BLOCK * 0.382
 export const MAXIMUM_RADIUS = MAXIMUM_DIAMETER / 2
-
-const config = {
-  type: Phaser.CANVAS,
-  width: '100%',
-  height: '100%',
-  physics: {
-    default: 'arcade'
-  },
-  scale: {
-    mode: Phaser.Scale.FIT,
-    height: 900,
-    width: 1600,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  scene: Scene
-}
-
-export default config
