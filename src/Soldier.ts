@@ -5,7 +5,7 @@ import { Position, Result } from './types'
 
 export default class Soldier extends Enemy {
   constructor ({
-    scene, position, realPosition, radius = 0.015, speed = 0.000066
+    scene, position, realPosition, radius = 0.015, speed = 0.0000625
   }: {
     scene: Scene
     position?: Position

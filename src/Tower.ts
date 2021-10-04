@@ -25,7 +25,7 @@ export default class Tower extends Static {
       scene, position, realPosition, radius: 0.01
     })
 
-    this.range = this.scene.SPACE * 3
+    this.range = this.scene.SPACE * 2.5
     this.realRange = this.scene.getReal(this.range)
     this.fireTime = Date.now()
 
@@ -295,9 +295,9 @@ export default class Tower extends Static {
       if (recharged) {
         this.attack({ now, tracer, enemies })
 
-        this.scene.graphics.lineStyle(1, 0x00FF00, 0.5)
+        this.scene.graphics.lineStyle(1, 0x00FF00, 0.33)
       } else {
-        this.scene.graphics.lineStyle(1, 0x00FFFF, 0.4)
+        this.scene.graphics.lineStyle(1, 0x00FFFF, 0.25)
       }
 
       this.scene.graphics.strokeLineShape(tracer)

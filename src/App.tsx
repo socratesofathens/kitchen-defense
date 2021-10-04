@@ -10,7 +10,6 @@ export default function App ({ next }: {
 }): JSX.Element {
   function onContinue (): () => void {
     const listener = (e: any): void => {
-      console.log('detail test:', e.detail)
       next?.(e.detail)
 
       hide()

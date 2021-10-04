@@ -4,7 +4,7 @@ import AcuBot from './AcuBot'
 import Ball from './Ball'
 
 import {
-  BLOCK, HALF_HEIGHT, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, MAXIMUM_DIAMETER, MAXIMUM_RADIUS
+  BLOCK, HALF_RATIO, HEIGHT, RATIO, TWO, SEVEN, WIDTH, FOURTEEN, SIX, THREE, MAXIMUM_DIAMETER, MAXIMUM_RADIUS
 } from './config'
 import Enemy from './Enemy'
 import Mob from './Mob'
@@ -118,7 +118,7 @@ export default class Scene extends Phaser.Scene {
 
     this.sugar = new Sugar(this)
 
-    const position = { x: 1.25, y: 0.5 }
+    const position = { x: 1.23, y: 0.53 }
     this.queen = new Soldier({ scene: this, position })
     this.createWorkers({ position: this.ORIGIN })
 
@@ -135,7 +135,6 @@ export default class Scene extends Phaser.Scene {
     })
     this.resetLabel.setInteractive()
     this.resetLabel.on('pointerup', (pointer: any, localX: any, localY: any, event: any) => {
-      console.log('reset')
       this.over = false
       // this.events.removeAllListeners()
       // this.registry.reset()
@@ -676,23 +675,25 @@ export default class Scene extends Phaser.Scene {
     )
     const currentDegrees = Phaser.Math.RadToDeg(currentRadians)
 
-    const maximum = 120
+    const maximum = 45
 
     const ratio = distance / WIDTH
     const degrees = maximum * ratio
 
-    const enemiesRemainder = enemiesLength % 2
-    const enemiesZero = enemiesRemainder === 0
-    const enemiesFactor = enemiesZero
+    const distanceCeiling = Math.ceil(distance)
+    const leftOrRight = distanceCeiling % 2
+    const directionZero = leftOrRight === 0
+    const enemiesFactor = directionZero
       ? 1
       : -1
 
     const factoredDegrees = degrees * enemiesFactor
     const combinedDegrees = currentDegrees + factoredDegrees
-    const moduloDegrees = combinedDegrees % maximum
-    const absoluteDegrees = Math.abs(moduloDegrees)
-    const newDegrees = absoluteDegrees - 30
-    const radians = Phaser.Math.DegToRad(newDegrees)
+    const positiveDegrees = combinedDegrees < 0
+      ? maximum + combinedDegrees
+      : combinedDegrees
+    const moduloDegrees = positiveDegrees % (maximum * 2)
+    const radians = Phaser.Math.DegToRad(moduloDegrees)
 
     const enemiesLog = enemiesLength > 0
       ? Math.log(enemiesLength)
@@ -700,33 +701,38 @@ export default class Scene extends Phaser.Scene {
 
     const newDistance = WIDTH + ((WIDTH / 10) * enemiesLog)
 
-    const base = { x: 0, y: HALF_HEIGHT }
-    const rotated = Phaser.Math.RotateAroundDistance(
-      base,
-      this.sugar.realPosition.x,
-      this.sugar.realPosition.y,
+    const bottomLeft = { x: 0, y: HEIGHT }
+    const bottomRight = { x: WIDTH, y: HEIGHT }
+    const spawn = Phaser.Math.RotateAroundDistance(
+      bottomLeft,
+      bottomRight.x,
+      bottomRight.y,
       radians,
       newDistance
     )
 
-    const spawn = rotated
+    const soldierRatio = this.towers.length / enemiesLength
 
-    if (this.towers.length > 0 && enemiesLength > 5) {
-      const enemiesRatio = (enemiesLength / 2) / this.towers.length
-      const enemiesDivisor = (Math.ceil(enemiesRatio) % 15) + 1
-      const enemiesRemainder = enemiesLength % enemiesDivisor
+    if (soldierRatio >= 1) {
+      const soldier = new Soldier({ scene: this, realPosition: spawn })
+
+      return soldier
+    } else {
+      const percent = 4 * soldierRatio
+      const floored = 5 - Math.ceil(percent)
+      const enemiesRemainder = distanceCeiling % floored
       const enemiesZero = enemiesRemainder === 0
 
       if (enemiesZero) {
         const soldier = new Soldier({ scene: this, realPosition: spawn })
 
         return soldier
+      } else {
+        const worker = new Enemy({ scene: this, realPosition: spawn, radius: 0.01 })
+
+        return worker
       }
     }
-
-    const worker = new Enemy({ scene: this, realPosition: spawn, radius: 0.01 })
-
-    return worker
   }
 
   createWorkers ({ position, realPosition, time = 0 }: {
@@ -738,23 +744,16 @@ export default class Scene extends Phaser.Scene {
     if (enemiesLength < 1000) {
       const death = this.checkRealPosition({ position, realPosition })
 
-      const logTime = Math.log(time)
-      const fraction = 15
-      const fractionTime = logTime > 0
-        ? logTime / fraction
-        : 0
-      const length = Math.ceil(fractionTime) + 1
-
       const distance = Phaser.Math.Distance.Between(
         death.x, death.y, this.sugar.realPosition.x, this.sugar.realPosition.y
       )
 
-      Array.from(
-        { length },
-        (_, index) => this.createWorker({
-          death, time, enemiesLength: enemiesLength + index, distance
-        })
-      )
+      this.createWorker({
+        death, time, enemiesLength: enemiesLength, distance
+      })
+      this.createWorker({
+        death, time, enemiesLength: enemiesLength + 1, distance
+      })
     } else {
       console.warn('Too many enemies')
     }
@@ -843,11 +842,11 @@ export default class Scene extends Phaser.Scene {
   }
 
   setupTowers (): void {
-    const topLeft = { x: this.SPACE * 21, y: this.SPACE * 6 }
-    const topRight = { x: this.SPACE * 25, y: this.SPACE * 6 }
-    const bottomLeft = { x: this.SPACE * 19, y: this.SPACE * 8 }
-    const bottomRight = { x: this.SPACE * 19, y: this.SPACE * 12 }
-    const inside = { x: this.SPACE * 20, y: this.SPACE * 7 }
+    const topLeft = { x: this.SPACE * 17, y: this.SPACE * 5 }
+    const topRight = { x: this.SPACE * 20, y: this.SPACE * 5 }
+    const bottomLeft = { x: this.SPACE * 15, y: this.SPACE * 7 }
+    const bottomRight = { x: this.SPACE * 15, y: this.SPACE * 10 }
+    const inside = { x: this.SPACE * 16, y: this.SPACE * 6 }
     const positions = [
       topLeft, topRight, bottomLeft, bottomRight, inside
     ]
@@ -1010,7 +1009,7 @@ export default class Scene extends Phaser.Scene {
           this.sugar.realPosition.y
         )
 
-        const realRange = this.getReal(this.SPACE * 3)
+        const realRange = this.getReal(this.SPACE * 2.5)
         Phaser.Geom.Line.SetToAngle(
           tracer,
           this.pointerPosition.x,

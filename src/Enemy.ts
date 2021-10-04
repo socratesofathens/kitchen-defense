@@ -4,7 +4,7 @@ import { Position } from './types'
 
 export default class Enemy extends Mob {
   constructor ({
-    scene, position, realPosition, radius, speed = 0.00015, image = 'worker'
+    scene, position, realPosition, radius, speed = 0.000125, image = 'worker'
   }: {
     scene: Scene
     position?: Position
@@ -28,5 +28,12 @@ export default class Enemy extends Mob {
     this.container.add(sprite)
 
     this.scene.enemies.add(this.container)
+  }
+
+  update ({ now, delta }: {
+    now: number
+    delta: number
+  }): void {
+    super.update({ now, delta })
   }
 }
